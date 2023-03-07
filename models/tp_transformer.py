@@ -127,3 +127,23 @@ class Encoder (nn.Module):
             out = i(out, out, out, mask)
 
         return out
+    
+class DecoderBlock(nn.Module):
+    def __init__(self, embedding_dim, num_heads, dropout, device):
+        super(DecoderBlock, self).__init__()
+        self.attention = SelfAttention(embedding_dim, num_heads)
+        self.n1 = nn.LayerNorm(embedding_dim)
+        self.transformer_block = TransformerBlock(embedding_dim,num_heads, dropout)
+        self.dropout = nn.Dropout(dropout)
+
+        def forward(self, input, value, key, src_mask, trg_mask):
+            attention_out = self.attention(input, input, input, trg_mask)
+            #adding residual connection
+            add_res= attention_out + input
+            out = self.n1(add_res)
+            out = self.dropout(out)
+            out = self.transformer_block(value, key, out, src_mask)
+            return out
+        ### Tutta la parte di sopra dell' encoder è definita come transformer block
+        ### Capire bene perchè e cosa sono le mask
+
