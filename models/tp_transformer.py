@@ -99,5 +99,31 @@ class TransformerBlock (nn.Module):
         out = self.n2(out_to_norm)
         out = self.dropout(out)
         return out
+    
 
+class Encoder (nn.Module):
+    def __init__(self,vocab_size, embedding_dim, num_trans_block, num_heads, device, dropout, max_input_len):
+        super(Encoder, self).__init__()
+        self.token_embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
+        #define all the layers for all the transformer blocks
+        self.transformer_blocks = nn.ModuleList(
+            [
+                TransformerBlock(embedding_dim,num_heads, dropout)
+                for _ in range(num_trans_block)
+            ]
+        ) #Cerca se c'è un modo di farlo diverso
+        self.dropout = nn.Dropout
 
+    def forward(self, input, mask):
+        N, seq_lenght = input.shape #capire che sono e se c'è un altro modo di definirli
+        embedding = self.token_embedding(input)
+        pos= torch.arange(0, seq_lenght).expand(N, seq_lenght).to(self.device)
+        #Sum the position encoding + the token encoding to get the positional encoding
+        pos_encoded = embedding + pos
+        out = self.dropout(pos_encoded)
+        #We compute the output for each transformer block
+        for i in self.transformer_blocks:
+            out = i(out, out, out, mask)
+
+        return out
