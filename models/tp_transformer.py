@@ -67,3 +67,37 @@ class SelfAttention(nn.Module):
 
         out = self.fc_out(out)
         return out
+    
+
+
+class TransformerBlock (nn.Module):
+    def __init__(self, embedding_dim, num_heads, dropout):
+        super(TransformerBlock, self).__init__()
+        self.attention= SelfAttention(embedding_dim, num_heads)
+        #defining the two Normalization Layers
+        self.n1 = nn.LayerNorm(embedding_dim)
+        self.n2 = nn.LayerNorm(embedding_dim)
+        #Forward Layer
+        mul = 4
+        self.feed_forward = nn.Sequential(
+            nn.Linear(embedding_dim, mul * embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, mul * embedding_dim)
+        )
+        ### Sostituiscilo con 3 moduli separati
+        self.dropout=nn.Dropout(dropout)
+    def forward(self, value, key, query, mask):
+        att_out = self.attention(value, key, query, mask)
+        # adding the residual connections
+        res_add_out = att_out + query
+        #normalization
+        out = self.n1(res_add_out)
+        out = self.dropout(out)
+        forward_out = self.feed_forward(out) #cambia in 3 moduli separati
+        # adding the residual connections
+        out_to_norm=forward_out + out
+        out = self.n2(out_to_norm)
+        out = self.dropout(out)
+        return out
+
+
