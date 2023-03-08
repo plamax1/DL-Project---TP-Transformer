@@ -22,51 +22,50 @@ class PositionsEncoding(nn.Module):
 
 
 class SelfAttention(nn.Module):
-    def __init__(self, embed_size, heads):
+    def __init__(self, embedding_size, num_heads):
         super(SelfAttention, self).__init__()
-        self.embed_size = embed_size  #size of the queries and key (Q,K)
-        self.heads = heads 
-        self.head_dim = embed_size // heads
+        self.embedding_size = embedding_size  #size of the input
+        self.num_heads = num_heads 
+        self.head_dim = embedding_size // num_heads
 
-        #assert is used for a debugging mode, return or a true value, otherwise return false with exception between ""
-        assert (self.head_dim * heads == embed_size), "Embed size needs to be div by heads"
+        assert (self.head_dim * num_heads == embedding_size), "embedding_size should be div by num_heads"
 
-        self.values = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.keys = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.queries = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.fc_out = nn.Linear(heads*self.head_dim, embed_size)
+        self.q = nn.Linear(self.head_dim, self.head_dim, bias = False)
+        self.k = nn.Linear(self.head_dim, self.head_dim, bias = False)
+        self.v = nn.Linear(self.head_dim, self.head_dim, bias = False)
+        self.fully_connect = nn.Linear(self.head_dim*num_heads, embedding_size)
 
-    def forward(self, values, keys, query, mask):
-        N = query.shape[0]
-        value_len, key_len, query_len = values.shape[1], keys.shape[1], query.shape[1]
+    def forward(self, value, key, query, mask):
+        #how many times the block is repeated
+        N = query.shape[0] 
 
-        # Split embedding into self.head pieces
-        values = values.reshape(N, value_len, self.heads, self.head_dim)
-        keys = keys.reshape(N, key_len, self.heads, self.head_dim)
-        queries = query.reshape(N, key_len, self.heads, self.head_dim)
+        value_len, key_len, query_len = value.shape[1], key.shape[1], query.shape[1]
 
-        # energy is a product between Q and K ==> (Q*K)
-        energy = torch.einsum("nqhd,nkhd->nhqk" , [queries, keys])
+        q = query.reshape(N, key_len, self.heads, self.head_dim)
+        k = key.reshape(N, key_len, self.heads, self.head_dim)
+        v = value.reshape(N, value_len, self.heads, self.head_dim)
 
-        # queries shape: (N, query_len, heads, head_dim)
-        # keys shape: (N, key_len, heads, head_dim)
-        # energy shape: (N, heads, query_len, key_len)    
+        # Product between Q and K ==> (Q*K)
+        # matmul_qk -> (N, heads, query_len, key_len) 
+        matmul_qk = torch.einsum("nqhd,nkhd->nhqk" , [q, k])  
         
+        #if the mask is applied, fills with the -infinity value all the element of the matmul_qk with a mask==0
         if mask is not None:
-            energy = energy.masked_fill(mask == 0, float("-1e20"))
+            matmul_qk = matmul_qk.masked_fill(mask == 0, float("-1e20"))
         
-        attention = torch.softmax(energy / (self.embed_size ** (1/2)), dim =3)
+        dk= self.embedding_size ** (1/2)
 
-        # output is a final product between attention piece and values(V)
-        out = torch.einsum("nhql,nlhd->nqhd", [attention, values]).reshape(
+        # Apply the Softmax linear function 
+        attention = torch.softmax(matmul_qk / dk, dim =3)
+
+        # Final product between attention and V
+        # output -> (N, query_len, heads, head_dim )
+        output = torch.einsum("nhql,nlhd->nqhd", [attention, v]).reshape(
             N, query_len, self.heads*self.head_dim
         )
-        # attention_shape: (N, heads, query_len, key_len)
-        # values shape: (N, value_len, heads, head_dim)
-        # (N, query_len, heads, head_dim )
-
-        out = self.fc_out(out)
-        return out
+        
+        output = self.fully_connect(output)
+        return output
     
 
 
