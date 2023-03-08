@@ -147,3 +147,29 @@ class DecoderBlock(nn.Module):
         ### Tutta la parte di sopra dell' encoder è definita come transformer block
         ### Capire bene perchè e cosa sono le mask
 
+class Decoder (nn.Module):
+    def __init__(self, target_voc_size, embedding_dim, num_heads, num_transformer_block, heads, dropout, device, max_input_len ):
+        super(Decoder, self). __init__()
+        self.tok_embedding = nn.Embedding(target_voc_size, embedding_dim)
+        self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
+        self.trasformer_block = nn.ModuleList(
+            [DecoderBlock(embedding_dim,num_heads, dropout, device)
+             for _ in range (num_transformer_block)]
+        )
+
+        self.linear = nn.Linear(embedding_dim, target_voc_size)
+        self.dropout= nn.Dropout(dropout)
+
+
+    def forward(self, input, enc_out, src_mask, trg_mask):
+        N, seq_len = input.shape
+        embedding = self.token_embedding(input)
+        pos= torch.arange(0, seq_len).expand(N, seq_len).to(self.device)
+        #Sum the position encoding + the token encoding to get the positional encoding
+        pos_encoded = embedding + pos
+        out = self.dropout(pos_encoded)
+
+        for i in self.trasformer_block:
+            out = i(input, enc_out, enc_out, src_mask, trg_mask)
+            out = self.linear(out)
+    
