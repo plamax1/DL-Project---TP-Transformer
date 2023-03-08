@@ -136,14 +136,14 @@ class DecoderBlock(nn.Module):
         self.transformer_block = TransformerBlock(embedding_dim,num_heads, dropout)
         self.dropout = nn.Dropout(dropout)
 
-        def forward(self, input, value, key, src_mask, trg_mask):
-            attention_out = self.attention(input, input, input, trg_mask)
-            #adding residual connection
-            add_res= attention_out + input
-            out = self.n1(add_res)
-            out = self.dropout(out)
-            out = self.transformer_block(value, key, out, src_mask)
-            return out
+    def forward(self, input, value, key, src_mask, trg_mask):
+        attention_out = self.attention(input, input, input, trg_mask)
+        #adding residual connection
+        add_res= attention_out + input
+        out = self.n1(add_res)
+        out = self.dropout(out)
+        out = self.transformer_block(value, key, out, src_mask)
+        return out
         ### Tutta la parte di sopra dell' encoder è definita come transformer block
         ### Capire bene perchè e cosa sono le mask
 
@@ -173,3 +173,63 @@ class Decoder (nn.Module):
             out = i(input, enc_out, enc_out, src_mask, trg_mask)
             out = self.linear(out)
     
+class Transformer(nn.Module):
+    def __init__(
+        self,
+        src_vocab_size,
+        trg_vocab_size,
+        src_pad_idx,
+        trg_pad_idx,
+        embed_size=512,
+        num_layers=6,
+        heads=8,
+        dropout=0,
+        device="cpu",
+        max_length=100,
+    ):
+
+        super(Transformer, self).__init__()
+
+        self.encoder = Encoder(
+            src_vocab_size,
+            embed_size,
+            num_layers,
+            heads,
+            device,
+            dropout,
+            max_length,
+        )
+
+        self.decoder = Decoder(
+            trg_vocab_size,
+            embed_size,
+            num_layers,
+            heads,
+            dropout,
+            device,
+            max_length,
+        )
+
+        self.src_pad_idx = src_pad_idx
+        self.trg_pad_idx = trg_pad_idx
+        self.device = device
+
+    def make_src_mask(self, src):
+        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+        # (N, 1, 1, src_len)
+        return src_mask.to(self.device)
+
+    def make_trg_mask(self, trg):
+        N, trg_len = trg.shape
+        trg_mask = torch.tril(torch.ones((trg_len, trg_len))).expand(
+            N, 1, trg_len, trg_len
+        )
+
+        return trg_mask.to(self.device)
+
+    def forward(self, src, trg):
+        src_mask = self.make_src_mask(src)
+        trg_mask = self.make_trg_mask(trg)
+        enc_src = self.encoder(src, src_mask)
+        out = self.decoder(trg, enc_src, src_mask, trg_mask)
+        return out
