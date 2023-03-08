@@ -22,32 +22,40 @@ class PositionsEncoding(nn.Module):
 
 
 class SelfAttention(nn.Module):
-    def __init__(self, embedding_size, num_heads):
+    def __init__(self, p_emb):
         super(SelfAttention, self).__init__()
-        self.embedding_size = embedding_size  #size of the input
-        self.num_heads = num_heads 
-        self.head_dim = embedding_size // num_heads
+        self.p_emb = p_emb
+        #dimension of head
+        self.head_dim = p_emb.d_x
+        #number of heads
+        self.n_heads = p_emb.n_heads
 
-        assert (self.head_dim * num_heads == embedding_size), "embedding_size should be div by num_heads"
+        #each h applied separated transformation 
+        self.Wq = nn.Linear(self.head_dim, p_emb.d_q * p_emb.n_heads)
+        self.Wk = nn.Linear(self.head_dim, p_emb.d_k * p_emb.n_heads)
+        self.Wv = nn.Linear(self.head_dim, p_emb.d_v * p_emb.n_heads)
+        self.Wr = nn.Linear(self.head_dim, p_emb.d_r * p_emb.n_heads)
 
-        self.q = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.k = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.v = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.fully_connect = nn.Linear(self.head_dim*num_heads, embedding_size)
+        #understand what is n_I
+        self.wo = nn.Linear(p_emb.d_v * p_emb.n_heads, p_emb.d_x)
 
-    def forward(self, value, key, query, mask):
+    def forward(self, value, key, query, mask=None):
         #how many times the block is repeated
         N = query.shape[0] 
+ 
+        q = self.Wq(query)
+        k = self.Wk(key)
+        v = self.Wv(value)
+        r = self.Wr(query)
 
-        value_len, key_len, query_len = value.shape[1], key.shape[1], query.shape[1]
-
-        q = query.reshape(N, key_len, self.heads, self.head_dim)
-        k = key.reshape(N, key_len, self.heads, self.head_dim)
-        v = value.reshape(N, value_len, self.heads, self.head_dim)
+        q = q.view(N, -1, self.num_I, self.p_emb.d_q).permute(0,2,1,3)
+        k = k.view(N, -1, self.num_I, self.p_emb.d_k).permute(0,2,1,3)
+        v = v.view(N, -1, self.num_I, self.p_emb.d_v).permute(0,2,1,3)
+        r = r.view(N, -1, self.num_I, self.p_emb.d_r).permute(0,2,1,3)
 
         # Product between Q and K ==> (Q*K)
         # matmul_qk -> (N, heads, query_len, key_len) 
-        matmul_qk = torch.einsum("nqhd,nkhd->nhqk" , [q, k])  
+        matmul_qk = torch.einsum("nqhd,nkhd->nhqk" , q,k)  
         
         #if the mask is applied, fills with the -infinity value all the element of the matmul_qk with a mask==0
         if mask is not None:
