@@ -22,49 +22,65 @@ class PositionsEncoding(nn.Module):
 
 
 class SelfAttention(nn.Module):
-    def __init__(self, embedding_size, num_heads):
+    def __init__(self, p_emb):
         super(SelfAttention, self).__init__()
-        self.embedding_size = embedding_size  #size of the input
-        self.num_heads = num_heads 
-        self.head_dim = embedding_size // num_heads
+        self.p_emb = p_emb
+        #dimension of head
+        self.head_dim = p_emb.d_x
+        # understand what is n_I
+        self.n_I = p_emb.n_I
 
-        assert (self.head_dim * num_heads == embedding_size), "embedding_size should be div by num_heads"
+        self.Wq = nn.Linear(self.head_dim, p_emb.d_q * p_emb.n_heads)
+        self.Wk = nn.Linear(self.head_dim, p_emb.d_k * p_emb.n_heads)
+        self.Wv = nn.Linear(self.head_dim, p_emb.d_v * p_emb.n_heads)
+        self.Wr = nn.Linear(self.head_dim, p_emb.d_r * p_emb.n_heads)
 
-        self.q = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.k = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.v = nn.Linear(self.head_dim, self.head_dim, bias = False)
-        self.fully_connect = nn.Linear(self.head_dim*num_heads, embedding_size)
+        self.W_out = nn.Linear(p_emb.d_v * p_emb.n_I, p_emb.d_x)
 
-    def forward(self, value, key, query, mask):
+        self.dropout = nn.Dropout(p_emb.dropout)
+        self.dot_scale = torch.FloatTensor([math.sqrt(p_emb.d_k)])
+        self.mul_scale = torch.FloatTensor([1./math.sqrt(math.sqrt(2)-1)])
+
+    def forward(self, value, key, query, mask=None):
         #how many times the block is repeated
-        N = query.shape[0] 
+        batch_size = query.shape[0] 
+ 
+        Q = self.Wq(query)
+        K = self.Wk(key)
+        V = self.Wv(value)
+        R = self.Wr(query)
 
-        value_len, key_len, query_len = value.shape[1], key.shape[1], query.shape[1]
-
-        q = query.reshape(N, key_len, self.heads, self.head_dim)
-        k = key.reshape(N, key_len, self.heads, self.head_dim)
-        v = value.reshape(N, value_len, self.heads, self.head_dim)
+        Q = Q.view(N, -1, self.num_I, self.p_emb.d_q).permute(0,2,1,3)
+        K = K.view(N, -1, self.num_I, self.p_emb.d_k).permute(0,2,1,3)
+        V = V.view(N, -1, self.num_I, self.p_emb.d_v).permute(0,2,1,3)
+        R = R.view(N, -1, self.num_I, self.p_emb.d_r).permute(0,2,1,3)
 
         # Product between Q and K ==> (Q*K)
-        # matmul_qk -> (N, heads, query_len, key_len) 
-        matmul_qk = torch.einsum("nqhd,nkhd->nhqk" , [q, k])  
+        # matmul_qk -> (batc_size, num_heads, query_position, key_position) 
+        matmul_qk = torch.einsum("bhid,bhjd->bhij" , Q,K)  
         
-        #if the mask is applied, fills with the -infinity value all the element of the matmul_qk with a mask==0
-        if mask is not None:
-            matmul_qk = matmul_qk.masked_fill(mask == 0, float("-1e20"))
-        
-        dk= self.embedding_size ** (1/2)
+        #apply the dot scale to QK multiplication
+        dot = matmul_qk / self.dot_scale.to(key.device)
 
+        #if the mask is applied, fills with the -infinity value all the element in the K matrix with a mask==0
+        if mask is not None:
+            dot = dot.masked_fill(mask == 0, float("-1e10"))
+        
         # Apply the Softmax linear function 
-        attention = torch.softmax(matmul_qk / dk, dim =3)
+        attention = self.dropout(F.softmax(dot, dim =-1))
 
         # Final product between attention and V
-        # output -> (N, query_len, heads, head_dim )
-        output = torch.einsum("nhql,nlhd->nqhd", [attention, v]).reshape(
-            N, query_len, self.heads*self.head_dim
-        )
+        # output -> (batch_size, num_heads, seq_size, V_dimension )
+        dot_v = torch.einsum("bhjd,bhij->bhid", V, attention)
         
-        output = self.fully_connect(output)
+        #capire perche' ha creato questa nuova V
+        new_v = dot_v * R
+        new_v = new_v.permute(0,2,1,3).contiguous()
+
+        new_v = new_v.view(batch_size, -1, self.n_I * self.p.d_v)
+
+        output = self.W_out(new_v)
+
         return output
     
 
