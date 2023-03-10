@@ -50,10 +50,10 @@ class SelfAttention(nn.Module):
         V = self.Wv(value)
         R = self.Wr(query)
 
-        Q = Q.view(N, -1, self.num_I, self.p_emb.d_q).permute(0,2,1,3)
-        K = K.view(N, -1, self.num_I, self.p_emb.d_k).permute(0,2,1,3)
-        V = V.view(N, -1, self.num_I, self.p_emb.d_v).permute(0,2,1,3)
-        R = R.view(N, -1, self.num_I, self.p_emb.d_r).permute(0,2,1,3)
+        Q = Q.view(batch_size, -1, self.num_I, self.p_emb.d_q).permute(0,2,1,3)
+        K = K.view(batch_size, -1, self.num_I, self.p_emb.d_k).permute(0,2,1,3)
+        V = V.view(batch_size, -1, self.num_I, self.p_emb.d_v).permute(0,2,1,3)
+        R = R.view(batch_size, -1, self.num_I, self.p_emb.d_r).permute(0,2,1,3)
 
         # Product between Q and K ==> (Q*K)
         # matmul_qk -> (batc_size, num_heads, query_position, key_position) 
