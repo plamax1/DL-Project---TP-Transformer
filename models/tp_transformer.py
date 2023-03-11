@@ -39,7 +39,7 @@ class SelfAttention(nn.Module):
 
         self.dropout = nn.Dropout(embedding.dropout)
 
-        self.d_k = torch.FloatTensor([(embedding.d_k) ** 1/2])
+        self.scale = torch.FloatTensor([(embedding.d_k) ** 1/2])
 
     def forward(self, value, key, query, mask=None):
 
@@ -66,7 +66,7 @@ class SelfAttention(nn.Module):
             energy = energy.masked_fill(mask == 0, float("-1e20"))
         
         # Apply the Softmax linear function and dropout 
-        attention = self.dropout(F.softmax(energy / self.d_k.to(key.device), dim =-1))
+        attention = self.dropout(F.softmax(energy / self.scale.to(key.device), dim =-1))
 
         # Final product between attention and V
         final_mul = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
