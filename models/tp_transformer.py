@@ -22,66 +22,65 @@ class PositionsEncoding(nn.Module):
 
 
 class SelfAttention(nn.Module):
-    def __init__(self, p_emb):
+    def __init__(self, embedding):
         super(SelfAttention, self).__init__()
-        self.p_emb = p_emb
+        self.embedding = embedding
         #dimension of head
-        self.head_dim = p_emb.d_x
+        self.head_dim = embedding.x_dim
         # understand what is n_I
-        self.n_I = p_emb.n_I
+        self.num_heads = embedding.num_heads
 
-        self.Wq = nn.Linear(self.head_dim, p_emb.d_q * p_emb.n_heads)
-        self.Wk = nn.Linear(self.head_dim, p_emb.d_k * p_emb.n_heads)
-        self.Wv = nn.Linear(self.head_dim, p_emb.d_v * p_emb.n_heads)
-        self.Wr = nn.Linear(self.head_dim, p_emb.d_r * p_emb.n_heads)
+        self.queries = nn.Linear(self.head_dim, embedding.q_dim * embedding.num_heads)
+        self.keys = nn.Linear(self.head_dim, embedding.k_dim * embedding.num_heads)
+        self.values = nn.Linear(self.head_dim, embedding.v_dim * embedding.num_heads)
+        self.r_vec = nn.Linear(self.head_dim, embedding.r_dim * embedding.num_heads)
 
-        self.W_out = nn.Linear(p_emb.d_v * p_emb.n_I, p_emb.d_x)
+        self.fc_out = nn.Linear(embedding.dim_v * embedding.num_heads, embedding.dim_x)
 
-        self.dropout = nn.Dropout(p_emb.dropout)
-        self.dot_scale = torch.FloatTensor([math.sqrt(p_emb.d_k)])
-        self.mul_scale = torch.FloatTensor([1./math.sqrt(math.sqrt(2)-1)])
+        self.dropout = nn.Dropout(embedding.dropout)
+
+        self.scale = torch.FloatTensor([(embedding.d_k) ** 1/2])
 
     def forward(self, value, key, query, mask=None):
-        #how many times the block is repeated
+
         batch_size = query.shape[0] 
  
-        Q = self.Wq(query)
-        K = self.Wk(key)
-        V = self.Wv(value)
-        R = self.Wr(query)
+        #change shape to self tensor 
+        queries = self.queries(query).reshape(batch_size, -1, self.num_heads, self.embedding.q_dim)
+        keys = self.keys(key).reshape(batch_size, -1, self.num_heads, self.embedding.k_dim)
+        value = self.values(value).reshape(batch_size, -1, self.num_heads, self.embedding.v_dim)
+        r_vec = self.r_vec(query).reshape(batch_size, -1, self.num_heads, self.embedding.r_dim)
 
-        Q = Q.view(batch_size, -1, self.num_I, self.p_emb.d_q).permute(0,2,1,3)
-        K = K.view(batch_size, -1, self.num_I, self.p_emb.d_k).permute(0,2,1,3)
-        V = V.view(batch_size, -1, self.num_I, self.p_emb.d_v).permute(0,2,1,3)
-        R = R.view(batch_size, -1, self.num_I, self.p_emb.d_r).permute(0,2,1,3)
+        #permutation to QKV matrix
+        Q_permute = queries.permute(0,2,1,3)
+        K_permute = key.permute(0,2,1,3)
+        V_permute = value.permute(0,2,1,3)
+        R_permute = r_vec.permute(0,2,1,3)
 
         # Product between Q and K ==> (Q*K)
-        # matmul_qk -> (batc_size, num_heads, query_position, key_position) 
-        matmul_qk = torch.einsum("bhid,bhjd->bhij" , Q,K)  
-        
-        #apply the dot scale to QK multiplication
-        dot = matmul_qk / self.dot_scale.to(key.device)
+        energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)  
+        # energy : [batch_size, num_heads, query_position, key_position]
 
         #if the mask is applied, fills with the -infinity value all the element in the K matrix with a mask==0
         if mask is not None:
-            dot = dot.masked_fill(mask == 0, float("-1e10"))
+            energy = energy.masked_fill(mask == 0, float("-1e20"))
         
-        # Apply the Softmax linear function 
-        attention = self.dropout(F.softmax(dot, dim =-1))
+        # Apply the Softmax linear function and dropout 
+        attention = self.dropout(F.softmax(energy / self.scale.to(key.device), dim =-1))
 
         # Final product between attention and V
-        # output -> (batch_size, num_heads, seq_size, V_dimension )
-        dot_v = torch.einsum("bhjd,bhij->bhid", V, attention)
-        
-        #capire perche' ha creato questa nuova V
-        new_v = dot_v * R
-        new_v = new_v.permute(0,2,1,3).contiguous()
+        final_mul = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
+        # output : [batch_size, num_heads, seq_size, V_dimension]
 
-        new_v = new_v.view(batch_size, -1, self.n_I * self.p.d_v)
+        v_change = (final_mul * R_permute).permute(0,2,1,3)
+        # v_change = [batch_size, seq_size, num_heads, v_dim]
 
-        output = self.W_out(new_v)
+        #reshape the self tensor 
+        out = v_change.reshape(batch_size, -1, self.num_heads * self.p.v_dim)
 
-        return output
+        out = self.fc_out(out)
+
+        return out
     
 
 
