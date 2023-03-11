@@ -33,9 +33,9 @@ class SelfAttention(nn.Module):
         self.queries = nn.Linear(self.head_dim, embedding.q_dim * embedding.num_heads)
         self.keys = nn.Linear(self.head_dim, embedding.k_dim * embedding.num_heads)
         self.values = nn.Linear(self.head_dim, embedding.v_dim * embedding.num_heads)
-        self.r = nn.Linear(self.head_dim, embedding.r_dim * embedding.num_heads)
+        self.r_vec = nn.Linear(self.head_dim, embedding.r_dim * embedding.num_heads)
 
-        self.fc_out = nn.Linear(embedding.dim_v * embedding.n_I, embedding.dim_x)
+        self.fc_out = nn.Linear(embedding.dim_v * embedding.num_heads, embedding.dim_x)
 
         self.dropout = nn.Dropout(embedding.dropout)
 
@@ -49,13 +49,13 @@ class SelfAttention(nn.Module):
         queries = self.queries(query).reshape(batch_size, -1, self.num_heads, self.embedding.q_dim)
         keys = self.keys(key).reshape(batch_size, -1, self.num_heads, self.embedding.k_dim)
         value = self.values(value).reshape(batch_size, -1, self.num_heads, self.embedding.v_dim)
-        r = self.r(query).reshape(batch_size, -1, self.num_heads, self.embedding.r_dim)
+        r_vec = self.r_vec(query).reshape(batch_size, -1, self.num_heads, self.embedding.r_dim)
 
         #permutation to QKV matrix
         Q_permute = queries.permute(0,2,1,3)
         K_permute = key.permute(0,2,1,3)
         V_permute = value.permute(0,2,1,3)
-        R_permute = r.permute(0,2,1,3)
+        R_permute = r_vec.permute(0,2,1,3)
 
         # Product between Q and K ==> (Q*K)
         energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)  
