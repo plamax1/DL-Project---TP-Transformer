@@ -55,7 +55,7 @@ print('len of val: ', len(val_idx))
 #create the sets
 train = data.iloc[train_idx].reset_index().drop('index',axis=1)
 val = data.iloc[val_idx].reset_index().drop('index',axis=1)
-print("Test")
+print("DataFrame Created")
 
 #######################################################
 #               Define Vocabulary Class
@@ -67,9 +67,8 @@ class Vocabulary:
     __init__ method is called by default as soon as an object of this class is initiated
     we use this method to initiate our vocab dictionaries
     '''
-    def __init__(self, freq_threshold, max_size):
+    def __init__(self, max_size):
         '''
-        freq_threshold : the minimum times a word must occur in corpus to be treated in vocab
         max_size : max source vocab size. Eg. if set to 10,000, we pick the top 10,000 most frequent words and discard others
         '''
         #initiate the index to token dict
@@ -80,7 +79,6 @@ class Vocabulary:
         #initiate the token to index dict
         self.stoi = {k:j for j,k in self.itos.items()} 
         
-        self.freq_threshold = freq_threshold
         self.max_size = max_size
     
     '''
@@ -101,34 +99,19 @@ class Vocabulary:
     build the vocab: create a dictionary mapping of index to string (itos) and string to index (stoi)
     output ex. for stoi -> {'the':5, 'a':6, 'an':7}
     '''
-    def build_vocabulary(self, sentence_list):
-        #calculate the frequencies of each word first to remove the words with freq < freq_threshold
-        frequencies = {}  #init the freq dict
+    def build_vocabulary(self):
         idx = 3 #index from which we want our dict to start. We already used 4 indexes for pad, start, end, unk
-        
-        #calculate freq of words
-        for sentence in sentence_list:
-            for word in self.tokenizer(sentence):
-                if word not in frequencies.keys():
-                    frequencies[word]=1
-                else:
-                    frequencies[word]+=1
-                    
-                    
-        #limit vocab by removing low freq words
-        frequencies = {k:v for k,v in frequencies.items() if v>self.freq_threshold} 
-        
-        #limit vocab to the max_size specified
-        frequencies = dict(sorted(frequencies.items(), key = lambda x: -x[1])[:self.max_size-idx]) # idx =4 for pad, start, end , unk
+        #init the vocab
+        words = self.tokenizer(' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
             
         #create vocab
-        for word in frequencies.keys():
+        for word in words:
             self.stoi[word] = idx
             self.itos[idx] = word
             idx+=1
             
     '''
-    convert the list of words to a list of corresponding indexes
+    convert the list of token to a list of corresponding indexes
     '''    
     def numericalize(self, text):
         #tokenize text
@@ -146,16 +129,16 @@ class Vocabulary:
 
 
 #create a vocab class with freq_threshold=0 and max_size=100
-voc = Vocabulary(0, 100)
+voc = Vocabulary(200)
 sentence_list = ['that is a cat', 'that is not a dog']
 #build vocab
-voc.build_vocabulary(sentence_list)
+voc.build_vocabulary()
 
 print('index to string: ',voc.itos)
 print('string to index:',voc.stoi)
 
-print('numericalize -> cat and a dog: ', voc.numericalize('cat and a dog'))
-
+#print('numericalize -> cat and a dog: ', voc.numericalize('cat and a dog'))
+print('Vocabulary succesfully built')
 
 class Train_Dataset(Dataset):
     '''
@@ -169,8 +152,8 @@ class Train_Dataset(Dataset):
     target_vocab_max_size : max target vocab size
     '''
     
-    def __init__(self, df, source_column, target_column, transform=None, freq_threshold = 0,
-                source_vocab_max_size = 10000, target_vocab_max_size = 10000):
+    def __init__(self, df, source_column, target_column, transform=None,
+                source_vocab_max_size = 200, target_vocab_max_size = 200):
     
         self.df = df
         self.transform = transform
@@ -182,11 +165,11 @@ class Train_Dataset(Dataset):
         
         ##VOCAB class has been created above
         #Initialize source vocab object and build vocabulary
-        self.source_vocab = Vocabulary(freq_threshold, source_vocab_max_size)
-        self.source_vocab.build_vocabulary(self.source_texts.tolist())
+        self.source_vocab = Vocabulary(source_vocab_max_size)
+        self.source_vocab.build_vocabulary()
         #Initialize target vocab object and build vocabulary
-        self.target_vocab = Vocabulary(freq_threshold, target_vocab_max_size)
-        self.target_vocab.build_vocabulary(self.target_texts.tolist())
+        self.target_vocab = Vocabulary(target_vocab_max_size)
+        self.target_vocab.build_vocabulary()
         
     def __len__(self):
         return len(self.df)
@@ -202,7 +185,6 @@ class Train_Dataset(Dataset):
         if self.transform is not None:
             source_text = self.transform(source_text)
             
-        #numericalize texts ['<SOS>','cat', 'in', 'a', 'bag','<EOS>'] -> [1,12,2,9,24,2]
         numerialized_source = [self.source_vocab.stoi["<SOS>"]]
         numerialized_source += self.source_vocab.numericalize(source_text)
         numerialized_source.append(self.source_vocab.stoi["<EOS>"])
@@ -240,7 +222,6 @@ class Validation_Dataset:
         if self.transform is not None:
             source_text = self.transform(source_text)
             
-        #numericalize texts ['<SOS>','cat', 'in', 'a', 'bag','<EOS>'] -> [1,12,2,9,24,2]
         numerialized_source = [self.train_dataset.source_vocab.stoi["<SOS>"]]
         numerialized_source += self.train_dataset.source_vocab.numericalize(source_text)
         numerialized_source.append(self.train_dataset.source_vocab.stoi["<EOS>"])
@@ -248,10 +229,10 @@ class Validation_Dataset:
         numerialized_target = [self.train_dataset.target_vocab.stoi["<SOS>"]]
         numerialized_target += self.train_dataset.target_vocab.numericalize(target_text)
         numerialized_target.append(self.train_dataset.target_vocab.stoi["<EOS>"])
-        #print(numerialized_source)
-        return torch.tensor(numerialized_source), torch.tensor(numerialized_target) 
+        return torch.tensor(numerialized_source), torch.tensor(numerialized_target)
+    
 #######################################################
-#               Collate fn
+#               Collate fn 
 #######################################################
 
 '''
@@ -263,7 +244,7 @@ is used on single example
 class MyCollate:
     def __init__(self, pad_idx):
         self.pad_idx = pad_idx
-        
+        #Takes in input the integer used for the PAD
     
     #__call__: a default method
     ##   First the obj is created using MyCollate(pad_idx) in data loader
@@ -278,7 +259,8 @@ class MyCollate:
         target = [item[1] for item in batch] 
         #pad them using pad_sequence method from pytorch. 
         target = pad_sequence(target, batch_first=False, padding_value = self.pad_idx)
-        return source, target
+        #return source, target
+        return torch.transpose(source, 0,1), torch.transpose(target, 0,1)
 
 #######################################################
 #            Define Dataloader Functions
@@ -309,6 +291,9 @@ train_dataset[1]
 train_loader = get_train_loader(train_dataset, 32)
 source = next(iter(train_loader))[0]
 target = next(iter(train_loader))[1]
+###Quindi il dataloader restituisce batch size, tutti della stessa lunghezza. Es se la max len di una sentence in un batch_size è 120
+#allora tutte le sentence avranno lunghezza 120, chi sta a meno si aggiunge il padding.
+
 
 print('source: \n', source)
 
