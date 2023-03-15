@@ -289,6 +289,9 @@ print(train.loc[1])
 train_dataset[1]
 
 train_loader = get_train_loader(train_dataset, 32)
+def get_demo_trainer(batch_size):
+    return get_train_loader(train_dataset, batch_size)
+
 source = next(iter(train_loader))[0]
 target = next(iter(train_loader))[1]
 ###Quindi il dataloader restituisce batch size, tutti della stessa lunghezza. Es se la max len di una sentence in un batch_size è 120

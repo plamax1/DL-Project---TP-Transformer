@@ -3,7 +3,8 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+print('Successful import of transformer module')
+'''
 class PositionsEncoding(nn.Module):
     def __init__(self, vocab_dim, embedding_dim, dropout, lenght):
         super(PositionsEncoding,self).__init__
@@ -19,32 +20,37 @@ class PositionsEncoding(nn.Module):
         pos_enc = torch.zeros(lenght, embedding_dim)
         # create a o matriz on lenght rows, one for each word, 
         #and for each word create embedding_dim cols, for the encoding of each word
-
+'''
 
 class SelfAttention(nn.Module):
-    def __init__(self, embedding):
+    def __init__(self, embedding_dim, n_heads, dropout):
         super(SelfAttention, self).__init__()
-        self.embedding = embedding
+        self.embedding_dim = embedding_dim
         #dimension of head
-        self.head_dim = embedding.x_dim
+        self.head_dim = embedding_dim/n_heads
         # understand what is n_I
-        self.num_heads = embedding.num_heads
+        self.n_heads = n_heads
+        self.dropout=dropout
 
-        self.queries = nn.Linear(self.head_dim, embedding.q_dim * embedding.num_heads)
-        self.keys = nn.Linear(self.head_dim, embedding.k_dim * embedding.num_heads)
-        self.values = nn.Linear(self.head_dim, embedding.v_dim * embedding.num_heads)
-        self.r_vec = nn.Linear(self.head_dim, embedding.r_dim * embedding.num_heads)
+        self.queries = nn.Linear(self.embedding_dim, self.embedding_dim)
+        self.keys = nn.Linear(self.embedding_dim, self.embedding_dim)
+        self.values = nn.Linear(self.embedding_dim, self.embedding_dim)
+        self.r_vec = nn.Linear(self.embedding_dim, self.embedding_dim)
 
-        self.fc_out = nn.Linear(embedding.dim_v * embedding.num_heads, embedding.dim_x)
+        self.fc_out = nn.Linear(self.embedding_dim, self.embedding_dim)
 
-        self.dropout = nn.Dropout(embedding.dropout)
+        self.dropout = nn.Dropout(self.dropout)
 
-        self.scale = torch.FloatTensor([(embedding.d_k) ** 1/2])
+        self.scale = torch.FloatTensor([(embedding_dim) ** 1/2])
 
     def forward(self, value, key, query, mask=None):
-
+        #Query are the input valie
         batch_size = query.shape[0] 
- 
+        Q = self.queries(query)
+        K = self.values(value)
+        V = self.keys(key)
+        R = self.r_vec(query)
+        #Current shape of Q,K,V,R = [batch_size, seq_len, embedding_dim]
         #change shape to self tensor 
         queries = self.queries(query).reshape(batch_size, -1, self.num_heads, self.embedding.q_dim)
         keys = self.keys(key).reshape(batch_size, -1, self.num_heads, self.embedding.k_dim)
@@ -56,6 +62,7 @@ class SelfAttention(nn.Module):
         K_permute = key.permute(0,2,1,3)
         V_permute = value.permute(0,2,1,3)
         R_permute = r_vec.permute(0,2,1,3)
+        #The numbers in the permute are the dimensions
 
         # Product between Q and K ==> (Q*K)
         energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)  
@@ -87,7 +94,7 @@ class SelfAttention(nn.Module):
 class TransformerBlock (nn.Module):
     def __init__(self, embedding_dim, num_heads, dropout):
         super(TransformerBlock, self).__init__()
-        self.attention= SelfAttention(embedding_dim, num_heads)
+        self.attention= SelfAttention(embedding_dim,num_heads,dropout)
         #defining the two Normalization Layers
         self.n1 = nn.LayerNorm(embedding_dim)
         self.n2 = nn.LayerNorm(embedding_dim)
@@ -145,7 +152,7 @@ class Encoder (nn.Module):
 class DecoderBlock(nn.Module):
     def __init__(self, embedding_dim, num_heads, dropout, device):
         super(DecoderBlock, self).__init__()
-        self.attention = SelfAttention(embedding_dim, num_heads)
+        self.attention = SelfAttention(embedding_dim, num_heads, dropout)
         self.n1 = nn.LayerNorm(embedding_dim)
         self.transformer_block = TransformerBlock(embedding_dim,num_heads, dropout)
         self.dropout = nn.Dropout(dropout)
@@ -162,7 +169,7 @@ class DecoderBlock(nn.Module):
         ### Capire bene perchè e cosa sono le mask
 
 class Decoder (nn.Module):
-    def __init__(self, target_voc_size, embedding_dim, num_heads, num_transformer_block, heads, dropout, device, max_input_len ):
+    def __init__(self, target_voc_size, embedding_dim, num_heads, num_transformer_block, dropout, device, max_input_len ):
         super(Decoder, self). __init__()
         self.tok_embedding = nn.Embedding(target_voc_size, embedding_dim)
         self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
@@ -211,39 +218,83 @@ class Transformer(nn.Module):
             heads,
             device,
             dropout,
-            max_length,
+            max_length
         )
-
-        self.decoder = Decoder(
+        self.decoder= Decoder(200, embed_size, heads,num_layers,dropout, device, 200)
+        '''self.decoder = Decoder(
             trg_vocab_size,
             embed_size,
             num_layers,
             heads,
             dropout,
             device,
-            max_length,
-        )
+            max_length
+        )'''
 
         self.src_pad_idx = src_pad_idx
         self.trg_pad_idx = trg_pad_idx
         self.device = device
 
-    def make_src_mask(self, src):
-        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
-        # (N, 1, 1, src_len)
-        return src_mask.to(self.device)
+    def make_masks(self, src, trg):
+        # src = [batch_size, src_seq_size]
+        # trg = [batch_size, trg_seq_size]
 
-    def make_trg_mask(self, trg):
-        N, trg_len = trg.shape
-        trg_mask = torch.tril(torch.ones((trg_len, trg_len))).expand(
-            N, 1, trg_len, trg_len
-        )
+        src_mask = (src != self.pad_idx).unsqueeze(1).unsqueeze(2)
+        trg_pad_mask = (trg != self.pad_idx).unsqueeze(1).unsqueeze(3)
+        # trg_mask = [batch_size, 1, trg_seq_size, 1]
+        trg_len = trg.shape[1]
 
-        return trg_mask.to(self.device)
+        trg_sub_mask = torch.tril(
+        torch.ones((trg_len, trg_len), dtype=torch.uint8, device=trg.device))
+
+        trg_mask = trg_pad_mask.type(torch.ByteTensor) & trg_sub_mask.type(torch.ByteTensor)
+
+        # src_mask = [batch_size, 1, 1, pad_seq]
+        # trg_mask = [batch_size, 1, pad_seq, past_seq]
+        return src_mask.to(src.device), trg_mask.to(src.device)
 
     def forward(self, src, trg):
-        src_mask = self.make_src_mask(src)
-        trg_mask = self.make_trg_mask(trg)
+        # src = [batch_size, src_seq_size]
+        # trg = [batch_size, trg_seq_size]
+
+        src_mask, trg_mask = self.make_masks(src, trg)
+        # src_mask = [batch_size, 1, 1, pad_seq]
+        # trg_mask = [batch_size, 1, pad_seq, past_seq]
+
+        src = self.embedding(src)
+        trg = self.embedding(trg)
+        # src = [batch_size, src_seq_size, hid_dim]
+
         enc_src = self.encoder(src, src_mask)
-        out = self.decoder(trg, enc_src, src_mask, trg_mask)
-        return out
+        # enc_src = [batch_size, src_seq_size, hid_dim]
+
+        out = self.decoder(trg, enc_src, trg_mask, src_mask)
+        # out = [batch_size, trg_seq_size, d_x]
+
+        logits = self.embedding.transpose_forward(out)
+        # logits = [batch_size, trg_seq_size, d_vocab]
+
+        return logits
+
+def make_src_mask(self, src):
+    # src = [batch size, src sent len]
+    src_mask = (src != self.pad_idx).unsqueeze(1).unsqueeze(2)
+    return src_mask.to(src.device)
+
+def make_trg_mask(self, trg):
+    # trg = [batch size, trg sent len]
+    trg_pad_mask = (trg != self.pad_idx).unsqueeze(1).unsqueeze(3)
+
+    trg_len = trg.shape[1]
+
+    trg_sub_mask = torch.tril(
+      torch.ones((trg_len, trg_len), dtype=torch.uint8, device=trg.device))
+
+    trg_mask = trg_pad_mask.type(torch.ByteTensor) & trg_sub_mask.type(torch.ByteTensor)
+
+    return trg_mask.to(trg.device)
+
+
+
+print('Creating model in module...')
+model = Transformer(100, 100, 0, 0)
