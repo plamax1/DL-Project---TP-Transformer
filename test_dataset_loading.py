@@ -129,7 +129,7 @@ class Vocabulary:
 
 
 #create a vocab class with freq_threshold=0 and max_size=100
-voc = Vocabulary(200)
+voc = Vocabulary(130)
 sentence_list = ['that is a cat', 'that is not a dog']
 #build vocab
 voc.build_vocabulary()

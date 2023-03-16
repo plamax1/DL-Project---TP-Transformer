@@ -16,8 +16,8 @@ if __name__ == "__main__":
     src_pad_idx = 0
     trg_pad_idx = 0
     #Define the vocab size
-    src_vocab_size = 200
-    trg_vocab_size = 10
+    src_vocab_size = 130
+    trg_vocab_size = 130
     
     #Create model
     print('Creating model...')
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     )
 
     ### Dataset loading
-    train_iter = get_demo_trainer(32)
+    train_iter = get_demo_trainer(3)
     print('Model created')
     #Now how to train the model?
     print('Starting model training')
@@ -37,18 +37,53 @@ if __name__ == "__main__":
     start = time.time()
     temp = start
     total_loss = 0
-    epochs = 10
+    epochs = 1
 
-    for i in range(epochs):
-        for i, batch in enumerate(train_iter):
+    for epoch in range(epochs):
+        for i, batch in enumerate(train_iter): #l'enumerate finisce non va avanti all'infinito
             src = batch[0]
             trg = batch[1]
             #print(batch[0].shape)
             #print(batch[1].shape)
+            print(i)
+            
+
+    #in model si chama la forward di transformer
+            preds = model(src,trg)
+            
+            print('PREDICTED: ', preds)
+            print('PREDICTED SHAPE: ', preds.shape)
+            print('TARGET SHAPE: ', trg.shape)
+            print('Test.................')
+            a=torch.flatten(preds)
+            print('Flatten pred len: ', len(a))
+            print('Sum of all the value in predit: ', torch.sum(a))
 
 
+            #prediction shape: [batch_size, seq_lenght, trg_vocab_size]
+            break
+
+    '''
+    target_pad = 0
+    optim.zero_grad()
+    #here we compute the loss
+    loss = F.cross_entropy(preds.view(-1, preds.size(-1)),
+                results, ignore_index=target_pad)
+    loss.backward()
+    optim.step()
+
+    #print things
+    total_loss += loss.data[0]
+            if (i + 1) % print_every == 0:
+                loss_avg = total_loss / print_every
+                print("time = %dm, epoch %d, iter = %d, loss = %.3f,
+                %ds per %d iters" % ((time.time() - start) // 60,
+                epoch + 1, i + 1, loss_avg, time.time() - temp,
+                print_every))
+                total_loss = 0
+                temp = time.time()
 
     #out = model(x, trg[:, :-1])
     #print(out.shape)'''
 
-    print('You are in the main file')
+print('You are in the main file')
