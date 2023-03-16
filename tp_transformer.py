@@ -86,8 +86,10 @@ class SelfAttention(nn.Module):
         print('Energy shape: ', energy.shape)
         #if the mask is applied, fills with the -infinity value all the element in the K matrix with a mask==0
         if mask is not None:
-            #energy = energy.masked_fill(mask == 0, float("-1e20"))
-            print('Skipping mask...')    
+            print('MASK SHAPE: ', mask.shape)
+            energy = energy.masked_fill(mask == 0, float("-1e10"))
+            print('Mask applied mask...')    
+            print('Masked Energy shape: ', energy.shape)
         # Apply the Softmax linear function and dropout 
         attention = self.dropout(F.softmax(energy / self.dot_scale.to(key.device), dim =-1))
         print('Attention shape: ', energy.shape)
@@ -227,6 +229,7 @@ class Decoder (nn.Module):
 
         self.linear = nn.Linear(embedding_dim, target_voc_size)
         self.dropout= nn.Dropout(dropout)
+        self.softmax = nn.Softmax(dim=2)
 
 
     def forward(self, input, enc_out, src_mask, trg_mask):
@@ -246,8 +249,12 @@ class Decoder (nn.Module):
             out = i(pos_encoded, enc_out, enc_out, src_mask, trg_mask)
             #DecoderBlock(self, input, value, key, src_mask, trg_mask):
 
-            out = self.linear(out)
-        return out
+            out = self.linear(out) #this has shape[batch_size, seq_len, vocab_size]
+            print('DECODER - before softmax shape ', out.shape)
+            prob_out = self.softmax(out)
+            print('DECODER - after_softmax_shape ', prob_out.shape)
+
+        return prob_out
 class Transformer(nn.Module):
     def __init__(
         self,
@@ -292,13 +299,16 @@ class Transformer(nn.Module):
         self.device = device
         self.pad_idx=0
 
-    def make_masks(self, src, trg):
-        # src = [batch_size, src_seq_size]
-        # trg = [batch_size, trg_seq_size]
 
+    def make_src_mask(self, src):
+        # src = [batch size, src sent len]
         src_mask = (src != self.pad_idx).unsqueeze(1).unsqueeze(2)
-        trg_pad_mask = (trg != self.pad_idx).unsqueeze(1).unsqueeze(3)
-        # trg_mask = [batch_size, 1, trg_seq_size, 1]
+        return src_mask.to(src.device)
+    
+    def make_trg_mask(self, trg):
+        # trg = [batch size, trg sent len]
+        trg_pad_mask = (trg != 0).unsqueeze(1).unsqueeze(3)
+
         trg_len = trg.shape[1]
 
         trg_sub_mask = torch.tril(
@@ -306,15 +316,16 @@ class Transformer(nn.Module):
 
         trg_mask = trg_pad_mask.type(torch.ByteTensor) & trg_sub_mask.type(torch.ByteTensor)
 
-        # src_mask = [batch_size, 1, 1, pad_seq]
-        # trg_mask = [batch_size, 1, pad_seq, past_seq]
-        return src_mask.to(src.device), trg_mask.to(src.device)
-
+        return trg_mask.to(trg.device)
+    
     def forward(self, src, trg):
         # src = [batch_size, src_seq_size]
         # trg = [batch_size, trg_seq_size]
-
-        src_mask, trg_mask = self.make_masks(src, trg)
+        src_mask = self.make_src_mask(src)
+        trg_mask = self.make_trg_mask(trg)
+        print('TRANSFORMER FORWARD mask shapes: src_mask: ', src_mask.shape  )
+        print('TRANSFORMER FORWARD mask shapes: trg_mask: ', trg_mask.shape  )
+        
         # src_mask = [batch_size, 1, 1, pad_seq]
         # trg_mask = [batch_size, 1, pad_seq, past_seq]
 
@@ -323,34 +334,17 @@ class Transformer(nn.Module):
         # src = [batch_size, src_seq_size, hid_dim]
         #This encoder takes the input and makes the embedding on its own
         enc_src = self.encoder(src, src_mask)
-        # enc_src = [batch_size, src_seq_size, hid_dim]
+        print('ENC_SRC shape: ', enc_src.shape)
+        # enc_src = [batch_size, src_seq_size, hid_dim] hid dim should be token embedding dimension
 
-        out = self.decoder(trg, enc_src, trg_mask, src_mask)
+        out = self.decoder(trg, enc_src, src_mask, trg_mask)
+        
         # out = [batch_size, trg_seq_size, d_x]
 
         #logits = self.embedding.transpose_forward(out)
         # logits = [batch_size, trg_seq_size, d_vocab]
 
         return out
-
-def make_src_mask(self, src):
-    # src = [batch size, src sent len]
-    src_mask = (src != self.pad_idx).unsqueeze(1).unsqueeze(2)
-    return src_mask.to(src.device)
-
-def make_trg_mask(self, trg):
-    # trg = [batch size, trg sent len]
-    trg_pad_mask = (trg != self.pad_idx).unsqueeze(1).unsqueeze(3)
-
-    trg_len = trg.shape[1]
-
-    trg_sub_mask = torch.tril(
-      torch.ones((trg_len, trg_len), dtype=torch.uint8, device=trg.device))
-
-    trg_mask = trg_pad_mask.type(torch.ByteTensor) & trg_sub_mask.type(torch.ByteTensor)
-
-    return trg_mask.to(trg.device)
-
 
 
 print('Creating model in module...')

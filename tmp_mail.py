@@ -2,8 +2,16 @@ from tp_transformer import *
 from test_dataset_loading import *
 import torch
 import time
+import torch.nn as nn
 #import test_dataset_loading
-
+'''
+def get_readable_output (input, train_iter):
+    for i in input:
+        # in i there is the single sentence
+        string = ''
+        for j in list(i):
+            string.append(train_iter.int(j))
+'''
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -38,6 +46,8 @@ if __name__ == "__main__":
     temp = start
     total_loss = 0
     epochs = 1
+    #define criterion:
+    criterion = nn.CrossEntropyLoss(ignore_index=0) #ignore padding index
 
     for epoch in range(epochs):
         for i, batch in enumerate(train_iter): #l'enumerate finisce non va avanti all'infinito
@@ -61,6 +71,49 @@ if __name__ == "__main__":
 
 
             #prediction shape: [batch_size, seq_lenght, trg_vocab_size]
+            #now we want to apply an argmax to get the predicted token
+            predicted_outputs = torch.argmax(preds, dim = 2)
+            print('TRAINING LOOP: Predected Output after argmax', predicted_outputs.shape)
+            print(predicted_outputs)
+            #just for curiosity convert to string 
+            #readable_output = get_readable_output(predicted_outputs, train_iter)
+            #once we got the output what are we going to do?
+           
+            # compute loss
+            #loss = criterion(flat_logits, flat_trg) / self.p.grad_accum_steps
+            loss = criterion(preds, trg) / self.p.grad_accum_steps
+            loss.backward()
+
+            # compute acc
+            acc = compute_accuracy(logits=logits,
+                                    targets=trg,
+                                    pad_value=self.p.PAD) / self.p.grad_accum_steps
+
+            # store accumulation until it is time to step
+            accum_loss += loss
+            accum_acc += acc
+            self.grad_accum_step += 1
+
+            if self.grad_accum_step % self.p.grad_accum_steps == 0:
+                # perform step
+                torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(),
+                                            max_norm=self.p.max_abs_grad_norm)
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+                self.grad_accum_step = 0
+
+                # update loss and acc sum and counter
+                loss_counter += 1
+                loss_sum += accum_loss
+                acc_sum += accum_acc
+
+                # reset accum values
+                accum_loss = 0
+                accum_acc = 0
+
+            else:
+                # only grad accum step, skip global_step increment at the end
+                continue
             break
 
     '''
