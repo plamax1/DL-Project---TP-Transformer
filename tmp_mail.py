@@ -34,7 +34,7 @@ if __name__ == "__main__":
     )
 
     ### Dataset loading
-    train_iter = get_demo_trainer(512)
+    train_iter = get_demo_trainer(3)
     print('Model created')
     #Now how to train the model?
     print('Starting model training')
@@ -146,7 +146,7 @@ if __name__ == "__main__":
             else:
                 # only grad accum step, skip global_step increment at the end
                 continue'''
-            total_loss += loss.data[0]
+            total_loss += int(loss)
             if (i + 1) % 100 == 0:
                 loss_avg = total_loss / 100
                 print('------------------------------------------')
