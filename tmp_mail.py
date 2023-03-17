@@ -34,7 +34,7 @@ if __name__ == "__main__":
     )
 
     ### Dataset loading
-    train_iter = get_demo_trainer(3)
+    train_iter = get_demo_trainer(512)
     print('Model created')
     #Now how to train the model?
     print('Starting model training')
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             
 
     #in model si chama la forward di transformer
-            preds = model(src,trg)
+            '''preds = model(src,trg[:, :-1])
             
             print('PREDICTED: ', preds)
             print('PREDICTED SHAPE: ', preds.shape)
@@ -78,14 +78,46 @@ if __name__ == "__main__":
             #just for curiosity convert to string 
             #readable_output = get_readable_output(predicted_outputs, train_iter)
             #once we got the output what are we going to do?
-           
+           #############The model should be completed, now complete the training loop
             # compute loss
             #loss = criterion(flat_logits, flat_trg) / self.p.grad_accum_steps
-            loss = criterion(preds, trg) / self.p.grad_accum_steps
-            loss.backward()
+            #the criterion is the loss function
+            #loss = criterion(preds, trg) / self.p.grad_accum_steps
+            print('LOSSPRINT: preicted_outputs shape: ', predicted_outputs.shape)
+            print('LOSSPRINT: trg shape: ', trg.shape)
 
+            flat_logits = preds.contiguous().view(-1, preds.shape[-1])
+            # [batch_size * (trg_seq_len-1), output_dim]
+
+            # ignore SOS symbol (skip first)
+            flat_trg = trg[:, 1:].contiguous().view(-1)
+            # [batch_size * (trg_seq_len-1)]
+
+            loss = criterion(preds, trg)
+            print('LOSS: ', loss)'''
+        
+
+            logits = model(src, trg[:, :-1])
+            optim.zero_grad()
+
+        # [batch_size, trg_seq_len-1, output_dim]
+
+            flat_logits = logits.contiguous().view(-1, logits.shape[-1])
+            # [batch_size * (trg_seq_len-1), output_dim]
+
+            # ignore SOS symbol (skip first)
+            flat_trg = trg[:, 1:].contiguous().view(-1)
+            # [batch_size * (trg_seq_len-1)]
+
+            # compute loss
+            loss = criterion(flat_logits, flat_trg)
+                    #With loss.backward we compute all the gradients
+            print('LOSS: ', loss)
+            loss.backward()
+            ### Now we need an optimizer to do the training step
             # compute acc
-            acc = compute_accuracy(logits=logits,
+            optim.step()
+            '''acc = compute_accuracy(logits=logits,
                                     targets=trg,
                                     pad_value=self.p.PAD) / self.p.grad_accum_steps
 
@@ -113,8 +145,14 @@ if __name__ == "__main__":
 
             else:
                 # only grad accum step, skip global_step increment at the end
-                continue
-            break
+                continue'''
+            total_loss += loss.data[0]
+            if (i + 1) % 100 == 0:
+                loss_avg = total_loss / 100
+                print('------------------------------------------')
+                print('AVG LOSS UP TO NOW: ', loss_avg)
+                total_loss = 0
+            
 
     '''
     target_pad = 0
