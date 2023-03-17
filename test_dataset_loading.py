@@ -27,19 +27,26 @@ from torch.utils.data import DataLoader, Dataset
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset
-
-
-with open('test.txt') as f:
-    lines = f.readlines()
-
-stripped=[]
-for i in lines:
-    stripped.append(i.strip())
+import pathlib
+import os
+import glob
+path = pathlib.Path().resolve()
+target_path = os.path.join(path, 'Dataset/**/*.txt')
+print('Starting Dataset pre-processing')
 data=[]
-i=0
-while i<len(stripped)-1:
-    data.append([stripped[i], stripped[i+1]])
-    i=i+2
+for file in glob.iglob(target_path, recursive=True):
+    with open(file) as f:
+        lines = f.readlines()
+        print('Loading file : ', file, ' file-len: ',  len(lines))
+
+    stripped=[]
+    for i in lines:
+        stripped.append(i.strip())
+
+    i=0
+    while i<len(stripped)-1:
+        data.append([stripped[i], stripped[i+1]])
+        i=i+2
 
 data=pd.DataFrame(data,columns=['Question','Answer'])
 val_frac = 0.1 #precentage data in val
