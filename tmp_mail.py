@@ -4,6 +4,7 @@ import torch
 import time
 import torch.nn as nn
 from utils import *
+import sys
 #import test_dataset_loading
 '''
 def get_readable_output (input, train_iter):
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     )
 
     ### Dataset loading
-    train_iter = get_demo_trainer(3)
+    train_iter = get_demo_trainer(sys.argv[1])
     print('Model created')
     #Now how to train the model?
     print('Starting model training')
