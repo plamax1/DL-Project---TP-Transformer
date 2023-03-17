@@ -32,7 +32,7 @@ if __name__ == "__main__":
     )
 
     ### Dataset loading
-    train_iter = get_demo_trainer(sys.argv[1])
+    train_iter = get_demo_trainer(int(sys.argv[1]))
     print('Model created')
     #Now how to train the model?
     print('Starting model training')
