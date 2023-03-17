@@ -3,6 +3,7 @@ from test_dataset_loading import *
 import torch
 import time
 import torch.nn as nn
+from utils import *
 #import test_dataset_loading
 '''
 def get_readable_output (input, train_iter):
@@ -16,10 +17,6 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
 
-    x = torch.tensor([[1, 5, 6, 4, 3, 9, 5, 2, 0], [1, 8, 7, 3, 4, 5, 6, 7, 2]]).to(
-        device
-    )
-    trg = torch.tensor([[1, 7, 4, 3, 5, 9, 2, 0], [1, 5, 6, 2, 4, 7, 6, 2]]).to(device)
     #define the pad index
     src_pad_idx = 0
     trg_pad_idx = 0
@@ -53,6 +50,9 @@ if __name__ == "__main__":
         for i, batch in enumerate(train_iter): #l'enumerate finisce non va avanti all'infinito
             src = batch[0]
             trg = batch[1]
+            src = src.to(device)
+            trg = trg.to(device)
+
             #print(batch[0].shape)
             #print(batch[1].shape)
             print(i)
@@ -147,11 +147,15 @@ if __name__ == "__main__":
                 # only grad accum step, skip global_step increment at the end
                 continue'''
             total_loss += int(loss)
-            if (i + 1) % 100 == 0:
+            if (i + 1) % 10 == 0:
                 loss_avg = total_loss / 100
                 print('------------------------------------------')
-                print('AVG LOSS UP TO NOW: ', loss_avg)
+                print('AVG LOSS UP TO NOW**************************: ', loss_avg)
                 total_loss = 0
+                acc = compute_accuracy(logits=logits,
+                                    targets=trg,
+                                    pad_value=0)
+                print('ACCURACY: ', acc)
             
 
     '''

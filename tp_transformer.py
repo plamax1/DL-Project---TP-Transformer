@@ -79,7 +79,7 @@ class SelfAttention(nn.Module):
         print('QKVR shape after (0,2,1,3) permutation: ', Q_permute.shape)
 
         # Product between Q and K ==> (Q*K)
-        energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)  
+        energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)
         # energy : [batch_size, num_heads, query_position, key_position]
         # energy : [batch_size, num_heads, seq_len, seq_len]
 
