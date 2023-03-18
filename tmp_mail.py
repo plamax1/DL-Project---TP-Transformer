@@ -44,8 +44,8 @@ if __name__ == "__main__":
     
     model.train()
     model.to(device)
-    start = time.time()
-    temp = start
+    start_time = time.time()
+    temp = start_time
     total_loss = 0
     epochs = 1
     #define criterion:
