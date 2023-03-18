@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     for epoch in range(epochs):
         for file in filelist:
-            train_iter=get_train_iterator(file, 1024)
+            train_iter=get_train_iterator(file, int(sys.argv[1]))
             for i, batch in enumerate(train_iter): #l'enumerate finisce non va avanti all'infinito
                 src = batch[0]
                 trg = batch[1]
