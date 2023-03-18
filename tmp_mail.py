@@ -58,6 +58,7 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss(ignore_index=0) #ignore padding index
 
     for epoch in range(epochs):
+        print('EPOCH: ', epoch)
         for file in filelist:
             train_iter=get_train_iterator(file, int(sys.argv[1]))
             for i, batch in enumerate(train_iter): #l'enumerate finisce non va avanti all'infinito
@@ -90,10 +91,10 @@ if __name__ == "__main__":
                 # compute acc
                 optim.step()
                 total_loss += int(loss)
-                if (i + 1) % 10 == 0:
+                if (i + 1) % 30 == 0:
                     loss_avg = total_loss / 100
                     print('------------------------------------------')
-                    print('AVG LOSS UP TO NOW**************************: ', loss_avg)
+                    print('Epoch: ',epoch , 'AVG LOSS UP TO NOW**************************: ', loss_avg)
                     total_loss = 0
                     acc = compute_accuracy(logits=logits,
                                         targets=trg,
