@@ -29,45 +29,6 @@ import torch.optim as optim
 from torch.utils.data import Dataset
 import pathlib
 import os
-import glob
-path = pathlib.Path().resolve()
-target_path = os.path.join(path, 'Dataset/**/*.txt')
-print('Starting Dataset pre-processing')
-
-for file in glob.iglob(target_path, recursive=True):
-    data=[]
-    with open(file) as f:
-        lines = f.readlines()
-        print('Loading file : ', file, ' file-len: ',  len(lines))
-
-    stripped=[]
-    for i in lines:
-        stripped.append(i.strip())
-
-    i=0
-    while i<len(stripped)-1:
-        data.append([stripped[i], stripped[i+1]])
-        i=i+2
-
-data=pd.DataFrame(data,columns=['Question','Answer'])
-val_frac = 0.1 #precentage data in val
-val_split_idx = int(len(data)*val_frac) #index on which to split
-data_idx = list(range(len(data))) #create a list of ints till len of data
-np.random.shuffle(data_idx)
-
-#get indexes for validation and train
-val_idx, train_idx = data_idx[:val_split_idx], data_idx[val_split_idx:]
-print('len of train: ', len(train_idx))
-print('len of val: ', len(val_idx))
-
-#create the sets
-train = data.iloc[train_idx].reset_index().drop('index',axis=1)
-val = data.iloc[val_idx].reset_index().drop('index',axis=1)
-print("DataFrame Created")
-
-#######################################################
-#               Define Vocabulary Class
-#######################################################
 
 class Vocabulary:
   
@@ -135,18 +96,27 @@ class Vocabulary:
 
 
 
-
 #create a vocab class with freq_threshold=0 and max_size=100
 voc = Vocabulary(130)
-sentence_list = ['that is a cat', 'that is not a dog']
 #build vocab
 voc.build_vocabulary()
+print('VOCABULARY CREATED')
 
 print('index to string: ',voc.itos)
 print('string to index:',voc.stoi)
 
+print('Starting Dataset pre-processing')
+
+#######################################################
+#               Define Vocabulary Class
+#######################################################
+
+
+
+
+
 #print('numericalize -> cat and a dog: ', voc.numericalize('cat and a dog'))
-print('Vocabulary succesfully built')
+
 
 class Train_Dataset(Dataset):
     '''
@@ -292,21 +262,50 @@ def get_valid_loader(dataset, train_dataset, batch_size, num_workers=0, shuffle=
     return loader
 
 
-train_dataset = Train_Dataset(data, 'Question', 'Answer')
-print(train.loc[1])
-train_dataset[1]
+#train_dataset = Train_Dataset(data, 'Question', 'Answer')
+#print(train.loc[1])
+#train_dataset[1]
 
-train_loader = get_train_loader(train_dataset, 32)
-def get_demo_trainer(batch_size):
-    return get_train_loader(train_dataset, batch_size)
+#train_loader = get_train_loader(train_dataset, 32)
+#def get_demo_trainer(batch_size):
+ #   return get_train_loader(train_dataset, batch_size)
 
-source = next(iter(train_loader))[0]
-target = next(iter(train_loader))[1]
+#source = next(iter(train_loader))[0]
+#target = next(iter(train_loader))[1]
 ###Quindi il dataloader restituisce batch size, tutti della stessa lunghezza. Es se la max len di una sentence in un batch_size è 120
 #allora tutte le sentence avranno lunghezza 120, chi sta a meno si aggiunge il padding.
 
+def get_train_iterator(filename, batch_size):
+    data=[]
+    with open(filename) as f:
+        lines = f.readlines()
+        print('Loading file : ', filename, ' file-len: ',  len(lines))
 
-print('source: \n', source)
+    stripped=[]
+    for i in lines:
+        stripped.append(i.strip())
 
-print('source shape: ',source.shape)
-print('target shape: ', target.shape)
+    i=0
+    while i<len(stripped)-1:
+        data.append([stripped[i], stripped[i+1]])
+        i=i+2
+
+
+    data=pd.DataFrame(data,columns=['Question','Answer'])
+    val_frac = 0.1 #precentage data in val
+    val_split_idx = int(len(data)*val_frac) #index on which to split
+    data_idx = list(range(len(data))) #create a list of ints till len of data
+    np.random.shuffle(data_idx)
+
+    #get indexes for validation and train
+    val_idx, train_idx = data_idx[:val_split_idx], data_idx[val_split_idx:]
+    print('len of train: ', len(train_idx))
+    print('len of val: ', len(val_idx))
+
+    #create the sets
+    train = data.iloc[train_idx].reset_index().drop('index',axis=1)
+    val = data.iloc[val_idx].reset_index().drop('index',axis=1)
+    print("DataFrame Created")
+    train_dataset = Train_Dataset(data, 'Question', 'Answer')
+    return get_train_loader(train_dataset, batch_size)
+
