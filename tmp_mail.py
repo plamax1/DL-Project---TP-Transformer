@@ -11,14 +11,7 @@ import os
 path = pathlib.Path().resolve()
 target_path = os.path.join(path, 'Dataset/**/*.txt')
 #import test_dataset_loading
-'''
-def get_readable_output (input, train_iter):
-    for i in input:
-        # in i there is the single sentence
-        string = ''
-        for j in list(i):
-            string.append(train_iter.int(j))
-'''
+
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -50,12 +43,17 @@ if __name__ == "__main__":
     optim = torch.optim.Adam(model.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)
     
     model.train()
+    model.to(device)
     start = time.time()
     temp = start
     total_loss = 0
     epochs = 1
     #define criterion:
     criterion = nn.CrossEntropyLoss(ignore_index=0) #ignore padding index
+    steps = 0
+    optim.zero_grad()
+    loss_sum, acc_sum, loss_counter = 0, 0, 0
+    accum_loss, accum_acc = 0, 0
 
     for epoch in range(epochs):
         print('EPOCH: ', epoch)
@@ -68,10 +66,9 @@ if __name__ == "__main__":
                 trg = trg.to(device)
                 #print(batch[0].shape)
                 #print(batch[1].shape)
-                print(i)       
-
+                #print(i)       
+                steps+=1
                 logits = model(src, trg[:, :-1])
-                optim.zero_grad()
 
             # [batch_size, trg_seq_len-1, output_dim]
 
@@ -83,24 +80,44 @@ if __name__ == "__main__":
                 # [batch_size * (trg_seq_len-1)]
 
                 # compute loss
-                loss = criterion(flat_logits, flat_trg)
+                loss = criterion(flat_logits, flat_trg) #no division by acc steps because = 1
                         #With loss.backward we compute all the gradients
-                print('LOSS: ', loss)
+                #print('LOSS: ', loss)
                 loss.backward()
                 ### Now we need an optimizer to do the training step
                 # compute acc
-                optim.step()
-                total_loss += int(loss)
-                if (i + 1) % 30 == 0:
-                    loss_avg = total_loss / 100
-                    print('------------------------------------------')
-                    print('Epoch: ',epoch , 'AVG LOSS UP TO NOW**************************: ', loss_avg)
-                    total_loss = 0
-                    acc = compute_accuracy(logits=logits,
+                acc = compute_accuracy(logits=logits,
                                         targets=trg,
                                         pad_value=0)
-                    print('ACCURACY: ', acc)
-                
+                accum_loss += loss
+                accum_acc += acc
+                #grad_accum_step += 1
+                #if grad_accum_step % p.grad_accum_steps == 0
+                #we perform step each time
+                torch.nn.utils.clip_grad_norm_(parameters=model.parameters(),
+                                       max_norm=0.1) #default 0.1
+                optim.step()
+                optim.zero_grad()
+                #grad_accum_step = 0
+                # update loss and acc sum and counter
+                loss_counter += 1
+                loss_sum += accum_loss
+                acc_sum += accum_acc
+
+                # reset accum values
+                accum_loss = 0
+                accum_acc = 0
+
+                if steps % 50 == 0 and steps != 0:
+                # compute loggin metrics
+                    elapsed = time.time() - start_time
+                    steps_per_sec = loss_counter / elapsed
+                    start_time = time.time()
+                    avg_loss = loss_sum / loss_counter
+                    avg_acc = acc_sum / loss_counter
+                    loss_sum, acc_sum, loss_counter = 0, 0, 0
+                    print('STEP: ', steps, ' TIME ELAPSED ',elapsed, ' avg loss :', avg_loss, ' avg accuracy: ', avg_acc )
+                            
 
 
 print('You are in the main file')

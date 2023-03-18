@@ -233,7 +233,7 @@ class Decoder (nn.Module):
 
 
     def forward(self, input, enc_out, src_mask, trg_mask):
-        print('Input shape: ' , input.shape)
+        #print('Input shape: ' , input.shape)
         N, seq_len = input.shape
         embedding = self.tok_embedding(input)
         pos = torch.arange(0, seq_len).expand(N, seq_len).to(self.device)

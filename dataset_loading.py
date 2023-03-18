@@ -29,6 +29,15 @@ import torch.optim as optim
 from torch.utils.data import Dataset
 import pathlib
 import os
+'''
+from other_test_dataset import *
+a=get_test()
+for i, batch in enumerate(a): #l'enumerate finisce non va avanti all'infinito
+                src = batch[0]
+                trg = batch[1]
+                print(batch[0].shape)
+                print(batch[1].shape)
+                print(i)'''
 
 class Vocabulary:
   
