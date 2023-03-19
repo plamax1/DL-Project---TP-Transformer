@@ -79,7 +79,7 @@ class Vocabulary:
     output ex. for stoi -> {'the':5, 'a':6, 'an':7}
     '''
     def build_vocabulary(self):
-        idx = 3 #index from which we want our dict to start. We already used 4 indexes for pad, start, end, unk
+        idx = 4 #index from which we want our dict to start. We already used 4 indexes for pad, start, end, unk
         #init the vocab
         words = self.tokenizer(" e*t-i12osa.3r()hn40+5dlp6mcf=u78/9vLb,?gWwSyqkxzjC:IDFEPMGR{}'AHT<>!")
             
