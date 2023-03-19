@@ -99,8 +99,8 @@ class Vocabulary:
         for token in tokenized_text:
             if token in self.stoi.keys():
                 numericalized_text.append(self.stoi[token])
-            #else: #out-of-vocab words are represented by UNK token index
-                #numericalized_text.append(self.stoi['<UNK>'])
+            else: #out-of-vocab words are represented by UNK token index
+                numericalized_text.append(self.stoi['<UNK>'])
                 
         return numericalized_text
 
