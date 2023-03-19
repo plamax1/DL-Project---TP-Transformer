@@ -54,7 +54,7 @@ class Vocabulary:
         ## <SOS> -> start token, added in front of each sentence to signify the start of sentence
         ## <EOS> -> End of sentence token, added to the end of each sentence to signify the end of sentence
         ## <unk> -> Unknown token
-        self.itos = {0: '<UNK>', 1: '<PAD>', 2:'<SOS>', 3:'<EOS>'}
+        self.itos = {0: '<PAD>',1: '<UNK>', 2:'<SOS>', 3:'<EOS>'}
         #initiate the token to index dict
         self.stoi = {k:j for j,k in self.itos.items()} 
         
