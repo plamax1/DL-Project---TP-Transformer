@@ -16,13 +16,14 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
 
+##################Usage python main.py <usage_mode:eval, train>
     try:
-        sys.argv[2]
-        model = torch.load(sys.argv[2])
-        print('Model ', sys.argv[2], ' loaded successfully')
-        model.eval()
-        Question = input("Insert a Question for the model: ")
-        #Handle the passing of the user inserted input to the model
+        if(sys.argv[2]=='eval'):
+            model = torch.load(sys.argv[3])
+            print('Model ', sys.argv[3], ' loaded successfully')
+            model.eval()
+            Question = input("Insert a Question for the model: ")
+            #Handle the passing of the user inserted input to the model
     except IndexError:
         print('No model to load')  
 
