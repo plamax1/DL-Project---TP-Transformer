@@ -16,12 +16,22 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
 
+    try:
+        sys.argv[2]
+        model = torch.load(sys.argv[2])
+        print('Model ', sys.argv[2], ' loaded successfully')
+        model.eval()
+        Question = input("Insert a Question for the model: ")
+        #Handle the passing of the user inserted input to the model
+    except IndexError:
+        print('No model to load')  
+
     #define the pad index
     src_pad_idx = 0
     trg_pad_idx = 0
     #Define the vocab size
-    src_vocab_size = 130
-    trg_vocab_size = 130
+    src_vocab_size = 73
+    trg_vocab_size = 73
     
     #Create model
     print('Creating model...')
@@ -118,6 +128,7 @@ if __name__ == "__main__":
                     loss_sum, acc_sum, loss_counter = 0, 0, 0
                     print('STEP: ', steps, ' TIME ELAPSED ',elapsed, ' avg loss :', avg_loss, ' avg accuracy: ', avg_acc )
                             
-
+    torch.save(model, 'model.pt')
+    print('Model succesfully saved')
 
 print('You are in the main file')

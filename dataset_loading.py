@@ -53,7 +53,8 @@ class Vocabulary:
         ## <PAD> -> padding, used for padding the shorter sentences in a batch to match the length of longest sentence in the batch
         ## <SOS> -> start token, added in front of each sentence to signify the start of sentence
         ## <EOS> -> End of sentence token, added to the end of each sentence to signify the end of sentence
-        self.itos = {0: '<PAD>', 1:'<SOS>', 2:'<EOS>'}
+        ## <unk> -> Unknown token
+        self.itos = {0: '<UNK>', 1: '<PAD>', 2:'<SOS>', 3:'<EOS>'}
         #initiate the token to index dict
         self.stoi = {k:j for j,k in self.itos.items()} 
         
@@ -80,7 +81,7 @@ class Vocabulary:
     def build_vocabulary(self):
         idx = 3 #index from which we want our dict to start. We already used 4 indexes for pad, start, end, unk
         #init the vocab
-        words = self.tokenizer(' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
+        words = self.tokenizer(" e*t-i12osa.3r()hn40+5dlp6mcf=u78/9vLb,?gWwSyqkxzjC:IDFEPMGR{}'AHT<>!")
             
         #create vocab
         for word in words:
@@ -106,10 +107,11 @@ class Vocabulary:
 
 
 #create a vocab class with freq_threshold=0 and max_size=100
-voc = Vocabulary(130)
+voc = Vocabulary(73)
 #build vocab
 voc.build_vocabulary()
 print('VOCABULARY CREATED')
+print('Vocabulary lenght: ', len(voc))
 
 print('index to string: ',voc.itos)
 print('string to index:',voc.stoi)
