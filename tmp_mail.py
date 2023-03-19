@@ -57,7 +57,7 @@ if __name__ == "__main__":
     start_time = time.time()
     temp = start_time
     total_loss = 0
-    epochs = 1
+    epochs = 10
     #define criterion:
     criterion = nn.CrossEntropyLoss(ignore_index=0) #ignore padding index
     steps = 0

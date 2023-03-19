@@ -72,7 +72,8 @@ class Vocabulary:
     @staticmethod
     def tokenizer(text):
         split_chars = lambda x: list(x)
-        return [tok.lower() for tok in split_chars(text)]
+        #return [tok.lower() for tok in split_chars(text)]
+        return split_chars(text)
     
     '''
     build the vocab: create a dictionary mapping of index to string (itos) and string to index (stoi)
@@ -85,6 +86,7 @@ class Vocabulary:
             
         #create vocab
         for word in words:
+            print('Associating  token: ', word , 'with index: ', idx)
             self.stoi[word] = idx
             self.itos[idx] = word
             idx+=1
