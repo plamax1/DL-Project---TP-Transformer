@@ -1,6 +1,6 @@
 from tp_transformer import *
 #from test_dataset_loading import *
-from dataset_loading import *
+from dataset_loading import Vocabulary, get_train_iterator, tensor_to_string
 import torch
 import time
 import torch.nn as nn
@@ -8,6 +8,7 @@ from utils import *
 import sys
 import glob
 import os
+import pathlib
 path = pathlib.Path().resolve()
 target_path = os.path.join(path, 'Dataset/**/*.txt')
 #import test_dataset_loading
@@ -16,14 +17,35 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
 
+    # Creating vocab
+    voc = Vocabulary(73) #73 is the vocabulary len used in the paper
+    #build vocab
+    voc.build_vocabulary()
+    print('VOCABULARY CREATED')
+    print('Vocabulary lenght: ', len(voc))
+    #print('index to string: ',voc.itos)
+    #print('string to index:',voc.stoi)
+
+
 ##################Usage python main.py <usage_mode:eval, train>
     try:
-        if(sys.argv[2]=='eval'):
+        if(sys.argv[2]=='ask'):
             model = torch.load(sys.argv[3])
-            print('Model ', sys.argv[3], ' loaded successfully')
+            #print('Model ', sys.argv[3], ' loaded successfully')
             model.eval()
-            Question = input("Insert a Question for the model: ")
-            #Handle the passing of the user inserted input to the model
+            while(1):
+                question = input("Insert a Question for the model: ")
+                #Handle the passing of the user inserted input to the model
+                tkq =[]
+                tkq [0]= voc.stoi['<SOS>']
+                tkq+= list(question)
+                tkq[len(question)]=voc.stoi['<EOS>']
+                preds = model(tkq)
+                print(tensor_to_string(preds[1:-1]))
+        if(sys.argv[2]=='evaluate'):
+            trg= get_test_iterator(batch_size)
+
+            pass
     except IndexError:
         print('No model to load')  
 
@@ -45,8 +67,6 @@ if __name__ == "__main__":
     #avoid going out of ram
     for file in glob.iglob(target_path, recursive=True):
         filelist.append(file)
-     #   train_iter= get_train_iterator(file , int(sys.argv[1]))
-    #train_iter = get_demo_trainer(int(sys.argv[1]))
     print('Model created')
     #Now how to train the model?
     print('Starting model training')
@@ -69,14 +89,16 @@ if __name__ == "__main__":
     for epoch in range(epochs):
         print('EPOCH: ', epoch)
         for file in filelist:
-            train_iter=get_train_iterator(file, int(sys.argv[1]))
+            train_iter=get_train_iterator(file, int(sys.argv[1]), voc)
             for i, batch in enumerate(train_iter): #l'enumerate finisce non va avanti all'infinito
                 src = batch[0]
                 trg = batch[1]
                 src = src.to(device)
                 trg = trg.to(device)
-                #print(batch[0].shape)
-                #print(batch[1].shape)
+                for i in src:
+                    print(tensor_to_string(voc, i))
+                print(batch[0].shape)
+                print(batch[1].shape)
                 #print(i)       
                 steps+=1
                 logits = model(src, trg[:, :-1])

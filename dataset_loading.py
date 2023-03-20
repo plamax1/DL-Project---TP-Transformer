@@ -29,15 +29,10 @@ import torch.optim as optim
 from torch.utils.data import Dataset
 import pathlib
 import os
-'''
-from other_test_dataset import *
-a=get_test()
-for i, batch in enumerate(a): #l'enumerate finisce non va avanti all'infinito
-                src = batch[0]
-                trg = batch[1]
-                print(batch[0].shape)
-                print(batch[1].shape)
-                print(i)'''
+
+#######################################################
+#               Define Vocabulary Class
+#######################################################
 
 class Vocabulary:
   
@@ -46,9 +41,7 @@ class Vocabulary:
     we use this method to initiate our vocab dictionaries
     '''
     def __init__(self, max_size):
-        '''
-        max_size : max source vocab size. Eg. if set to 10,000, we pick the top 10,000 most frequent words and discard others
-        '''
+
         #initiate the index to token dict
         ## <PAD> -> padding, used for padding the shorter sentences in a batch to match the length of longest sentence in the batch
         ## <SOS> -> start token, added in front of each sentence to signify the start of sentence
@@ -108,22 +101,12 @@ class Vocabulary:
 
 
 
-#create a vocab class with freq_threshold=0 and max_size=100
-voc = Vocabulary(73)
-#build vocab
-voc.build_vocabulary()
-print('VOCABULARY CREATED')
-print('Vocabulary lenght: ', len(voc))
 
-print('index to string: ',voc.itos)
-print('string to index:',voc.stoi)
+
+
+
 
 print('Starting Dataset pre-processing')
-
-#######################################################
-#               Define Vocabulary Class
-#######################################################
-
 
 
 
@@ -143,8 +126,7 @@ class Train_Dataset(Dataset):
     target_vocab_max_size : max target vocab size
     '''
     
-    def __init__(self, df, source_column, target_column, transform=None,
-                source_vocab_max_size = 200, target_vocab_max_size = 200):
+    def __init__(self, df, source_column, target_column, vocab, transform=None ):
     
         self.df = df
         self.transform = transform
@@ -156,12 +138,9 @@ class Train_Dataset(Dataset):
         
         ##VOCAB class has been created above
         #Initialize source vocab object and build vocabulary
-        self.source_vocab = Vocabulary(source_vocab_max_size)
-        self.source_vocab.build_vocabulary()
+        self.source_vocab = vocab
         #Initialize target vocab object and build vocabulary
-        self.target_vocab = Vocabulary(target_vocab_max_size)
-        self.target_vocab.build_vocabulary()
-        
+        self.target_vocab = vocab        
     def __len__(self):
         return len(self.df)
     
@@ -275,20 +254,8 @@ def get_valid_loader(dataset, train_dataset, batch_size, num_workers=0, shuffle=
     return loader
 
 
-#train_dataset = Train_Dataset(data, 'Question', 'Answer')
-#print(train.loc[1])
-#train_dataset[1]
 
-#train_loader = get_train_loader(train_dataset, 32)
-#def get_demo_trainer(batch_size):
- #   return get_train_loader(train_dataset, batch_size)
-
-#source = next(iter(train_loader))[0]
-#target = next(iter(train_loader))[1]
-###Quindi il dataloader restituisce batch size, tutti della stessa lunghezza. Es se la max len di una sentence in un batch_size è 120
-#allora tutte le sentence avranno lunghezza 120, chi sta a meno si aggiunge il padding.
-
-def get_train_iterator(filename, batch_size):
+def get_train_iterator(filename, batch_size, vocab ):
     data=[]
     with open(filename) as f:
         lines = f.readlines()
@@ -319,6 +286,49 @@ def get_train_iterator(filename, batch_size):
     train = data.iloc[train_idx].reset_index().drop('index',axis=1)
     val = data.iloc[val_idx].reset_index().drop('index',axis=1)
     print("DataFrame Created")
-    train_dataset = Train_Dataset(data, 'Question', 'Answer')
+    train_dataset = Train_Dataset(data, 'Question', 'Answer', vocab)
     return get_train_loader(train_dataset, batch_size)
+
+def tensor_to_string(vocab, input):
+    result=''
+    for i in list(input):
+        #print(i)
+        result += vocab.itos[int(i)]
+    return result
+
+def get_train_iterator(filename, batch_size, vocab ):
+    data=[]
+    with open(filename) as f:
+        lines = f.readlines()
+        print('Loading file : ', filename, ' file-len: ',  len(lines))
+
+    stripped=[]
+    for i in lines:
+        stripped.append(i.strip())
+
+    i=0
+    while i<len(stripped)-1:
+        data.append([stripped[i], stripped[i+1]])
+        i=i+2
+
+
+    data=pd.DataFrame(data,columns=['Question','Answer'])
+    val_frac = 0.1 #precentage data in val
+    val_split_idx = int(len(data)*val_frac) #index on which to split
+    data_idx = list(range(len(data))) #create a list of ints till len of data
+    np.random.shuffle(data_idx)
+
+    #get indexes for validation and train
+    val_idx, train_idx = data_idx[:val_split_idx], data_idx[val_split_idx:]
+    print('len of train: ', len(train_idx))
+    print('len of val: ', len(val_idx))
+
+    #create the sets
+    train = data.iloc[train_idx].reset_index().drop('index',axis=1)
+    val = data.iloc[val_idx].reset_index().drop('index',axis=1)
+    print("DataFrame Created")
+    train_dataset = Train_Dataset(data, 'Question', 'Answer', vocab)
+    return get_train_loader(train_dataset, batch_size)
+
+
 

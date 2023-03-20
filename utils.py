@@ -15,3 +15,9 @@ def compute_accuracy(logits, targets, pad_value):
   
   acc_percent = matches / len(logits)
   return acc_percent
+
+def preds_to_string(preds, voc):
+  result=''
+  for idx in preds:
+    result+=voc.itos[idx]
+  return result
