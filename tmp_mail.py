@@ -1,6 +1,6 @@
 from tp_transformer import *
 #from test_dataset_loading import *
-from dataset_loading import Vocabulary, get_train_iterator, tensor_to_string
+from dataset_loading import Vocabulary, get_train_iterator, tensor_to_string, get_test_iterator
 import torch
 import time
 import torch.nn as nn
@@ -43,7 +43,17 @@ if __name__ == "__main__":
                 preds = model(tkq)
                 print(tensor_to_string(preds[1:-1]))
         if(sys.argv[2]=='evaluate'):
-            trg= get_test_iterator(batch_size)
+            test_iter = get_test_iterator(1024, voc)
+            for i, batch in enumerate(test_iter): #l'enumerate finisce non va avanti all'infinito
+                print(batch[0].shape)
+                print(batch[1].shape)
+                src = batch[0]
+                trg = batch[1]
+                for i in src:
+                   print(tensor_to_string(voc, i))
+                #print(i)       
+                #logits = model(src, trg[:, :-1])
+
 
             pass
     except IndexError:
