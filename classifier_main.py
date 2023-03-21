@@ -55,7 +55,7 @@ if __name__ == "__main__":
     print('ARGV[1]=', sys.argv[1])
     
     if(sys.argv[1].strip()=='ask'):
-        #model = torch.load('tp-transformer.pt')
+        model = torch.load('tp-transformer.pt')
         print('Model loaded successfully')
         while(1):
                 question = input("Insert a Question for the model: ")
