@@ -51,22 +51,25 @@ class Multiclass(pl.LightningModule):
         return nn.NLLLoss()(logits.reshape(-1, 73), torch.flatten(labels).long())
 
     def training_step(self, train_batch):
-        #filelist = ['test.txt']
-        #for file in filelist:
-         #   print('Loading file : ', file)
-          #  train_batch=get_train_iterator(file, 10, voc)
-            x = self.add_padding(train_batch[0], 200)
-            y= self.add_padding(train_batch[1],35)
-            logits = self.forward(x)
-            loss = self.nllloss(logits, y)
-            self.log('train_loss', loss)
-            return loss
+        x = self.add_padding(train_batch[0], 200)
+        y= self.add_padding(train_batch[1],35)
+        logits = self.forward(x)
+        loss = self.nllloss(logits, y)
+        self.log('train_loss', loss)
+        return loss
     
-    def validation_step(self, val_batch):
-      x = val_batch[0]
-      y= val_batch[1]
-      logits = self.forward(x)
-      loss = self.cross_entropy_loss(logits, y)
-      self.log('val_loss', loss)
-    
+    def test_step(self, test_batch,):
+        x = self.add_padding(test_batch[0], 200)
+        y= self.add_padding(test_batch[1],35)
+        x = x.view(x.size(0), -1)
+        logits = self.forward(x)
+        loss = self.nllloss(logits, y)
+        prediction = torch.argmax(logits, dim=1)
+        accuracy = torch.sum(y == prediction).item() / (len(y) * 1.0)
+        output = dict({
+            'test_loss': loss,
+            'test_acc': torch.tensor(accuracy),
+        })
+        return output
+        
 
