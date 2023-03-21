@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
+
 class Multiclass(pl.LightningModule):
     def __init__(self, max_input_len, max_output_len, vocab_size):
         super().__init__()

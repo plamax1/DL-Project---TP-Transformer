@@ -8,6 +8,7 @@ from classifier_model import Multiclass
 import sys
 import glob
 import torch.optim as optim
+from tp_transformer_pl import *
 
 import os
 import pathlib
@@ -47,8 +48,8 @@ if __name__ == "__main__":
     #print('string to index:',voc.stoi)
     #Create model
     print('Creating model...')
-    model = Multiclass(200, 35, 73)
-
+    #model = Multiclass(200, 35, 73)
+    model = Transformer(73, 73, 0, 0, device='cpu').to(device)
     #Pre-loading dataset files:
     filelist=[]
     for file in glob.iglob(target_path, recursive=True):
@@ -57,7 +58,7 @@ if __name__ == "__main__":
     model.to(device)
 
     trainer = pl.Trainer()
-    train_iterator = get_train_iterator('test.txt', 1024, voc)
+    train_iterator = get_train_iterator('test.txt', 3, voc)
     print('train_it', type(train_iterator))
     #trainer.fit(model, train_iterator)
     trainer.fit(model, train_dataloaders = train_iterator)

@@ -140,7 +140,7 @@ class Encoder (pl.LightningModule):
         super(Encoder, self).__init__()
         #print('Vocab Size: ', vocab_size )
 
-        self.device = device
+        #self.device = device
 
         self.token_embedding = nn.Embedding(vocab_size, embedding_dim)
         self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
@@ -176,7 +176,7 @@ class Encoder (pl.LightningModule):
     
 class DecoderBlock(pl.LightningModule):
     def __init__(self, embedding_dim, num_heads, dropout, device):
-        self.device = device
+        #self.device = device
         super(DecoderBlock, self).__init__()
         self.attention = SelfAttention(embedding_dim, num_heads, dropout)
         self.n1 = nn.LayerNorm(embedding_dim)
@@ -204,11 +204,11 @@ class DecoderBlock(pl.LightningModule):
 class Decoder (pl.LightningModule):
     def __init__(self, target_voc_size, embedding_dim, num_heads, num_transformer_block, dropout, device, max_input_len ):
         super(Decoder, self). __init__()
-        self.device = device
+        #self.device = device
         self.tok_embedding = nn.Embedding(target_voc_size, embedding_dim)
         self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
         self.decoder_blocks = nn.ModuleList(
-            [DecoderBlock(embedding_dim,num_heads, dropout, device)
+            [DecoderBlock(embedding_dim,num_heads, dropout, self.device)
              for _ in range (num_transformer_block)]
         )
 
@@ -266,8 +266,8 @@ class Transformer(pl.LightningModule):
             dropout,
             max_length
         )'''
-        self.encoder= Encoder(src_vocab_size, embed_size, num_layers, heads, device, dropout, 200)
-        self.decoder= Decoder(trg_vocab_size, embed_size, heads,num_layers,dropout, device, max_input_len=200)
+        self.encoder= Encoder(src_vocab_size, embed_size, num_layers, heads, self.device, dropout, 200)
+        self.decoder= Decoder(trg_vocab_size, embed_size, heads,num_layers,dropout, self.device, max_input_len=200)
         '''self.decoder = Decoder(
             trg_vocab_size,
             embed_size,
@@ -281,7 +281,7 @@ class Transformer(pl.LightningModule):
         #self.src_pad_idx = src_pad_idx
         self.src_pad_idx = 0
         self.trg_pad_idx = trg_pad_idx
-        self.device = device
+        #self.device = device
         self.pad_idx=0
 
 
@@ -349,8 +349,8 @@ class Transformer(pl.LightningModule):
           #  train_batch=get_train_iterator(file, 10, voc)
             x = train_batch[0]
             y= train_batch[1]
-            logits = self.forward(x)
-            loss = self.nllloss(logits, y)
+            logits = self.forward(x, y)
+            loss = self.crossEntropyLoss(logits, y)
             self.log('train_loss', loss)
             return loss
     
