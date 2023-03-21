@@ -61,7 +61,6 @@ class Multiclass(pl.LightningModule):
     def test_step(self, test_batch,):
         x = self.add_padding(test_batch[0], 200)
         y= self.add_padding(test_batch[1],35)
-        x = x.view(x.size(0), -1)
         logits = self.forward(x)
         loss = self.nllloss(logits, y)
         prediction = torch.argmax(logits, dim=1)

@@ -354,12 +354,19 @@ class Transformer(pl.LightningModule):
             self.log('train_loss', loss)
             return loss
     
-    def validation_step(self, val_batch):
-      x = val_batch[0]
-      y= val_batch[1]
-      logits = self.forward(x)
-      loss = self.cross_entropy_loss(logits, y)
-      self.log('val_loss', loss)
+    def test_step(self, test_batch,):
+        x = test_batch[0]
+        y= test_batch[1]
+        x = x.view(x.size(0), -1)
+        logits = self.forward(x)
+        loss = self.nllloss(logits, y)
+        prediction = torch.argmax(logits, dim=1)
+        accuracy = torch.sum(y == prediction).item() / (len(y) * 1.0)
+        output = dict({
+            'test_loss': loss,
+            'test_acc': torch.tensor(accuracy),
+        })
+        return output
 
 print('Creating model in module...')
 #model = Transformer(100, 100, 0, 0)
