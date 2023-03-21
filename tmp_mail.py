@@ -113,7 +113,7 @@ if __name__ == "__main__":
                 steps+=1
                 logits = model(src, trg[:, :-1])
 
-            # [batch_size, trg_seq_len-1, output_dim]
+                # [batch_size, trg_seq_len-1, output_dim]
 
                 flat_logits = logits.contiguous().view(-1, logits.shape[-1])
                 # [batch_size * (trg_seq_len-1), output_dim]

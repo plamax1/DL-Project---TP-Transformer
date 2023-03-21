@@ -20,11 +20,9 @@ class Multiclass(nn.Module,  ):
         h1 = self.act1(self.input(x))
         h2 = self.act2(self.hidden(h1))
         out=self.output(h2)
-        print(type(out))
         out= out.reshape(10, -1, self.vocab_size)
         out2= torch.softmax(out, dim=2)
-        print(type(out))
-        tmp= out2.reshape(-1, self.vocab_size)
+        '''tmp= out2.reshape(-1, self.vocab_size)
         #size [batch_size*max_len, vocab_size]
         result = []
         for i in tmp:
@@ -33,7 +31,7 @@ class Multiclass(nn.Module,  ):
         #[batch_size, max_output_len]
 
         print('results shape: ', result.shape)
-            
-        return result
+            '''
+        return out2
     
 

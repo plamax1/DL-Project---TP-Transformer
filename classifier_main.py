@@ -21,7 +21,7 @@ import torch
 def add_padding(data, max_lenght):
     result=[]
     j=0
-    print('add padding input shape: ', data.shape)
+    #print('add padding input shape: ', data.shape)
     for i in data:
         ln = len(i)
         #print('ln: ', ln)
@@ -74,8 +74,11 @@ if __name__ == "__main__":
                 optimizer.zero_grad()
                 # forward propagation
                 outputs = model(inputs.float())
-                print('Output shape: ', outputs.shape)
-                loss = loss_fn(outputs, labels)
+                #print('Output shape: ', outputs.shape)
+                pad_trg= add_padding(labels, 35)
+                #print('TRG shape: ', pad_trg.shape)
+                rsh_out = outputs.reshape(-1, 73)
+                loss = loss_fn(rsh_out, torch.flatten(pad_trg.long()))
                 # backward propagation
                 loss.backward()
                 # optimize
