@@ -4,14 +4,6 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
-from dataset_loading import Vocabulary, get_train_iterator, tensor_to_string, get_test_iterator
-    # Creating vocab
-voc = Vocabulary(73) #73 is the vocabulary len used in the paper
-    #build vocab
-voc.build_vocabulary()
-print('VOCABULARY CREATED')
-print('Vocabulary lenght: ', len(voc))
-
 class Multiclass(pl.LightningModule):
     def __init__(self, max_input_len, max_output_len, vocab_size):
         super().__init__()
