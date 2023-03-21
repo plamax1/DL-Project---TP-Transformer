@@ -14,14 +14,26 @@ class Multiclass(nn.Module,  ):
         self.sotfmax = nn.Softmax()
         self.vocab_size = vocab_size
         
-    def forward(self, x):
+    def forward(self, data):
+        batch_size = data.shape[0]
+        x= data.view(batch_size, -1)
         h1 = self.act1(self.input(x))
-        h2 = self.act2(self.input(h1))
-        out= h2.split(self.vocab_size)
+        h2 = self.act2(self.hidden(h1))
+        out=self.output(h2)
+        print(type(out))
+        out= out.reshape(10, -1, self.vocab_size)
+        out2= torch.softmax(out, dim=2)
+        print(type(out))
+        tmp= out2.reshape(-1, self.vocab_size)
+        #size [batch_size*max_len, vocab_size]
         result = []
-        for i in out:
-            result.append(torch.argmax(self.sotfmax(i)))
+        for i in tmp:
+            result.append(torch.argmax(i))
+        result= torch.stack(result).reshape(batch_size, -1)
+        #[batch_size, max_output_len]
+
+        print('results shape: ', result.shape)
             
-        return h2
+        return result
     
 

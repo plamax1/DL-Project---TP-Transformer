@@ -85,7 +85,7 @@ class Vocabulary:
             
         #create vocab
         for word in words:
-            print('Associating  token: ', word , 'with index: ', idx)
+            #print('Associating  token: ', word , 'with index: ', idx)
             self.stoi[word] = idx
             self.itos[idx] = word
             idx+=1
