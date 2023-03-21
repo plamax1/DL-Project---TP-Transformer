@@ -37,19 +37,32 @@ def add_padding(data, max_lenght):
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
+    try:
+        model_name = sys.argv[1]
+        batch_size = sys.argv[2]
+    except:
+        print('Usage python main.py model_name batch_size')
+        exit(0)
+
 
     # Creating vocab
     voc = Vocabulary(73) #73 is the vocabulary len used in the paper
     #build vocab
     voc.build_vocabulary()
     print('VOCABULARY CREATED')
-    print('Vocabulary lenght: ', len(voc))
-    #print('index to string: ',voc.itos)
-    #print('string to index:',voc.stoi)
     #Create model
     print('Creating model...')
-    #model = Multiclass(200, 35, 73)
-    model = Transformer(73, 73, 0, 0, device='cpu').to(device)
+    print('ARGV[1]=', sys.argv[1])
+    if(sys.argv[1].strip()=='tp-transformer'):
+        #model = Multiclass(200, 35, 73)
+        model = Transformer(73, 73, 0, 0, device='cpu').to(device)
+    if(sys.argv[1].strip()=='classifier'):
+        model = Multiclass(200, 35, 73)
+        print('Model built')
+    if(not(sys.argv[1]=='classifier' or sys.argv[1]=='tp-transformer')):
+        print('Model not implemented yet, you can choose tp-transformer, classifier')
+        exit(0)
+
     #Pre-loading dataset files:
     filelist=[]
     for file in glob.iglob(target_path, recursive=True):
