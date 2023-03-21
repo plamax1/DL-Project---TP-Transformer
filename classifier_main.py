@@ -53,8 +53,12 @@ if __name__ == "__main__":
     #Create model
     print('Creating model...')
     print('ARGV[1]=', sys.argv[1])
+    
+    if(sys.argv[1].strip()=='ask'):
+        model = torch.load('tp-transformer.pt')
+        print('Model loaded successfully')
+
     if(sys.argv[1].strip()=='tp-transformer'):
-        #model = Multiclass(200, 35, 73)
         model = Transformer(73, 73, 0, 0, device='cpu').to(device)
     if(sys.argv[1].strip()=='classifier'):
         model = Multiclass(200, 35, 73)
