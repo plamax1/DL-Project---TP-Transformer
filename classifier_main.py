@@ -56,7 +56,7 @@ if __name__ == "__main__":
     
     if(sys.argv[1].strip()=='ask'):
         model = torch.load('tp-transformer.pt')
-        print('Model loaded successfully')
+        print('Model loaded successfully', model)
         while(1):
                 question = input("Insert a Question for the model: ")
                 tkq=torch.tensor([voc.stoi['<SOS>']])
