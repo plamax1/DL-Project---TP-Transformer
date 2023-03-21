@@ -14,7 +14,7 @@ import pathlib
 path = pathlib.Path().resolve()
 target_path = os.path.join(path, 'Dataset/**/*.txt')
 #import test_dataset_loading
-
+import pytorch_lightning as pl
 import torch 
    # Use NLLLoss()
 
@@ -48,8 +48,6 @@ if __name__ == "__main__":
     #Create model
     print('Creating model...')
     model = Multiclass(200, 35, 73)
-    loss_fn = nn.NLLLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     #Pre-loading dataset files:
     filelist=[]
@@ -57,34 +55,9 @@ if __name__ == "__main__":
         filelist.append(file)
         #print('Trainer file list loaded')
     model.to(device)
-    model.train()
 
-    epochs = 2
-    steps=0
-    for epoch in range(epochs):
-        print('Epoch: ', epoch)
-        running_loss = 0.0
-        for file in filelist:
-            print('Loading file : ', file)
-            train_iter=get_train_iterator(file, 10, voc)
-            for i, batch in enumerate(train_iter):
-                inputs = add_padding(batch[0], 200)
-                labels = batch[1]
-                # set optimizer to zero grad to remove previous epoch gradients
-                optimizer.zero_grad()
-                # forward propagation
-                outputs = model(inputs.float())
-                #print('Output shape: ', outputs.shape)
-                pad_trg= add_padding(labels, 35)
-                #print('TRG shape: ', pad_trg.shape)
-                rsh_out = outputs.reshape(-1, 73)
-                loss = loss_fn(rsh_out, torch.flatten(pad_trg.long()))
-                # backward propagation
-                loss.backward()
-                # optimize
-                optimizer.step()
-                running_loss += loss.item()
-                steps+=1
-                if(steps%100==0):
-                    # display statistics
-                    print('STEP: ',steps , ' ', f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.5f}')
+    trainer = pl.Trainer()
+    train_iterator = get_train_iterator('test.txt', 1024, voc)
+    print('train_it', type(train_iterator))
+    #trainer.fit(model, train_iterator)
+    trainer.fit(model, train_dataloaders = train_iterator)
