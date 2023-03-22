@@ -58,17 +58,18 @@ class Multiclass(pl.LightningModule):
         self.log('train_loss', loss)
         return loss
     
-    def test_step(self, test_batch,):
+    def test_step(self, test_batch, other):
         x = self.add_padding(test_batch[0], 200)
         y= self.add_padding(test_batch[1],35)
         logits = self.forward(x)
         loss = self.nllloss(logits, y)
-        prediction = torch.argmax(logits, dim=1)
+        prediction = torch.argmax(logits, dim=-1)
         accuracy = torch.sum(y == prediction).item() / (len(y) * 1.0)
         output = dict({
             'test_loss': loss,
             'test_acc': torch.tensor(accuracy),
         })
+        self.log_dict(output)
         return output
         
 

@@ -337,7 +337,7 @@ class Transformer(pl.LightningModule):
             y= train_batch[1]
             logits = self.forward(x, y)
             loss = self.crossEntropyLoss(logits, y)
-            self.log('train_loss', loss)
+            self.log('train_loss', loss, prog_bar=True, logger=True)
             return loss
     
     def test_step(self, test_batch, other):
@@ -346,10 +346,12 @@ class Transformer(pl.LightningModule):
         x = x.view(x.size(0), -1)
         logits = self.forward(x,y)
         loss = self.crossEntropyLoss(logits, y)
+        #print('LOSS: ', loss, 'ACCURACY: ', accuracy)
         prediction = torch.argmax(logits, dim=-1)
         accuracy = torch.sum(y == prediction).item() / (len(y) * 1.0)
         output = dict({
             'test_loss': loss,
             'test_acc': torch.tensor(accuracy),
         })
+        self.log_dict(output)
         return output

@@ -98,13 +98,13 @@ if __name__ == "__main__":
     #train_iterator = get_train_iterator('test.txt', batch_size, voc)
     #train_iterator = get_train_iterator(train_path, batch_size, voc, 0.005 )
     train_iterator = get_train_iterator(demo_path, batch_size, voc, 0.005 )
-    test_iterator= get_test_iterator(test_path, batch_size, voc)
+    test_iterator= get_train_iterator(test_path, batch_size, voc, 0.1)
     print('train_it', type(train_iterator))
     #trainer.fit(model, train_iterator)
     trainer.fit(model, train_dataloaders = train_iterator)
     torch.save(model, 'saved_' + sys.argv[1]+'.pt')
     print('Starting evaluation of the model')
     #Perform evaluation
-    trainer.test( dataloaders = test_iterator)
+    print(trainer.test( model, dataloaders = test_iterator))
     #trainer.test(model)
         
