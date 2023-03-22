@@ -3,3 +3,5 @@ Dataset
 TestDataset
 tp-transformer.pt
 lightning_logs
+*.pt
+savedtransformer

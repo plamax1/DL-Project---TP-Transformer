@@ -295,6 +295,35 @@ def get_train_iterator(filename, batch_size, vocab ):
     train_dataset = Train_Dataset(data, 'Question', 'Answer', vocab)
     return get_train_loader(train_dataset, batch_size)
 
+def get_train_iterator2(train_path, batch_size, vocab, percentage ):
+    data=[]
+    for file in glob.iglob(train_path, recursive=True):
+
+        with open(file) as f:
+            lines = f.readlines()
+            #print('Len lines before: ', len(lines))
+            lines = lines[:int(len(lines)*percentage)]
+            #print('Loading file : ', file, ' file-len: ',  len(lines))
+
+        stripped=[]
+        #print('Len lines after: ', len(lines))
+
+        for i in lines:
+            stripped.append(i.strip())
+
+        i=0
+        while i<len(stripped)-1:
+            data.append([stripped[i], stripped[i+1]])
+            i=i+2
+        print('File appended')
+    print('Dataset loaded: Loaded ', len(data), ' items, percentage: ', percentage)
+
+
+    data=pd.DataFrame(data,columns=['Question','Answer'])
+    train_dataset = Train_Dataset(data, 'Question', 'Answer', vocab)
+    return get_train_loader(train_dataset, batch_size)
+
+
 def tensor_to_string(vocab, input):
     result=''
     for i in list(input):

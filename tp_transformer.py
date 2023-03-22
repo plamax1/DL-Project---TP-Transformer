@@ -255,7 +255,7 @@ class TpTransformer(pl.LightningModule):
         max_length=100,
     ):
 
-        super(Transformer, self).__init__()
+        super(TpTransformer, self).__init__()
 
         '''self.encoder = Encoder(
             src_vocab_size,

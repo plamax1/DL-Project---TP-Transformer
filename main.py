@@ -1,5 +1,5 @@
 #from test_dataset_loading import *
-from dataset_loading import Vocabulary, get_train_iterator, tensor_to_string, get_test_iterator
+from dataset_loading import Vocabulary, get_train_iterator, get_train_iterator2, tensor_to_string, get_test_iterator
 import torch
 import time
 import torch.nn as nn
@@ -14,7 +14,8 @@ from transformer import Transformer
 import os
 import pathlib
 path = pathlib.Path().resolve()
-target_path = os.path.join(path, 'Dataset/**/*.txt')
+train_path = os.path.join(path, 'Dataset/Train/**/*.txt')
+test_path = os.path.join(path, 'Dataset/Test/**/*.txt')
 #import test_dataset_loading
 import pytorch_lightning as pl
 import torch 
@@ -79,19 +80,20 @@ if __name__ == "__main__":
         exit(0)
 
     #Pre-loading dataset files:
-    filelist=[]
-    for file in glob.iglob(target_path, recursive=True):
-        filelist.append(file)
-        #print('Trainer file list loaded')
-    model.to(device)
+    #filelist=[]
+    #for file in glob.iglob(train_path, recursive=True):
+     #   filelist.append(file)
+      #  #print('Trainer file list loaded')
+    #model.to(device)
 
-    trainer = pl.Trainer()
-    train_iterator = get_train_iterator('test.txt', batch_size, voc)
-    test_iterator= get_test_iterator(batch_size, voc)
+    trainer = pl.Trainer(max_epochs=10)
+    #train_iterator = get_train_iterator('test.txt', batch_size, voc)
+    train_iterator = get_train_iterator2(train_path, batch_size, voc, 0.5 )
+    #test_iterator= get_test_iterator(batch_size, voc)
     print('train_it', type(train_iterator))
     #trainer.fit(model, train_iterator)
     trainer.fit(model, train_dataloaders = train_iterator)
-    torch.save(model, 'saved' + sys.argv[1])
+    torch.save(model, 'saved_' + sys.argv[1]+'.pt')
 
       # Perform evaluation
         #trainer.test(mlp, DataLoader(dataset_test, num_workers=15, pin_memory=True))
