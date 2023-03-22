@@ -35,6 +35,7 @@ def add_padding(data, max_lenght):
     return result
 
 if __name__ == "__main__":
+    batch_size= 1024
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     try:
@@ -83,7 +84,12 @@ if __name__ == "__main__":
     model.to(device)
 
     trainer = pl.Trainer()
-    train_iterator = get_train_iterator('test.txt', 3, voc)
+    train_iterator = get_train_iterator('test.txt', batch_size, voc)
+    test_iterator= get_test_iterator(batch_size, voc)
     print('train_it', type(train_iterator))
     #trainer.fit(model, train_iterator)
     trainer.fit(model, train_dataloaders = train_iterator)
+
+      # Perform evaluation
+        #trainer.test(mlp, DataLoader(dataset_test, num_workers=15, pin_memory=True))
+        

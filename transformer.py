@@ -21,14 +21,9 @@ class SelfAttention(pl.LightningModule):
         self.queries = nn.Linear(self.embedding_dim, self.embedding_dim)
         self.keys = nn.Linear(self.embedding_dim, self.embedding_dim)
         self.values = nn.Linear(self.embedding_dim, self.embedding_dim)
-        self.r_vec = nn.Linear(self.embedding_dim, self.embedding_dim)
-
         self.fc_out = nn.Linear(self.embedding_dim, self.embedding_dim)
 
         self.dropout = nn.Dropout(self.dropout)
-        self.mul_scale = torch.FloatTensor([1./math.sqrt(math.sqrt(2) - 1)])
-
-        self.dot_scale = torch.FloatTensor([(embedding_dim) ** 1/2])
 
     def forward(self, value, key, query, mask=None):
         #Query are the input value
@@ -40,7 +35,6 @@ class SelfAttention(pl.LightningModule):
         Q = self.queries(query)
         K = self.values(value)
         V = self.keys(key)
-        R = self.r_vec(query)
         #print('ATTENTION-FORWARD: Q: self.queries(query):',Q.shape )
         #Current shape of Q,K,V,R = [batch_size, seq_len, embedding_dim]
         #change shape to self tensor 
@@ -49,23 +43,22 @@ class SelfAttention(pl.LightningModule):
         head_dim = int(self.embedding_dim/self.n_heads)
         #print("Head Dim:", head_dim)
         # Reshaping the matrices to make the get head_dim
+        #Reshape the embeddinh in n_heads different pieces
         Q = Q.reshape(batch_size, -1, self.n_heads, head_dim)
         K = K.reshape(batch_size, -1, self.n_heads, head_dim)
         V = V.reshape(batch_size, -1, self.n_heads, head_dim)
-        R = R.reshape(batch_size, -1, self.n_heads, head_dim)
         #print('QKVR shape: ', Q.shape)
 
         #permutation to QKV matrix
         Q_permute = Q.permute(0,2,1,3)
         K_permute = K.permute(0,2,1,3)
         V_permute = V.permute(0,2,1,3)
-        R_permute = R.permute(0,2,1,3)
         #The numbers in the permute are the dimensions
         #print('QKVR shape after (0,2,1,3) permutation: ', Q_permute.shape)
 
         # Product between Q and K ==> (Q*K)
         energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)
-        # energy : [batch_size, num_heads, query_position, key_position]
+        # energy : [batch_size, num_heads, query_len, key_len]
         # energy : [batch_size, num_heads, seq_len, seq_len]
 
         #print('Energy shape: ', energy.shape)
@@ -76,25 +69,15 @@ class SelfAttention(pl.LightningModule):
             #print('Mask applied mask...')    
             #print('Masked Energy shape: ', energy.shape)
         # Apply the Softmax linear function and dropout 
-        attention = self.dropout(F.softmax(energy / self.dot_scale.to(key.device), dim =-1))
+        attention = self.dropout(F.softmax(energy / (self.embedding_dim**(1/2))), dim =-1).reshape(batch_size, query.shape[1], self.n_heads*self.head_dim)
         #print('Attention shape: ', energy.shape)
         # attention = [batch_size, n_heads, seq_size, seq_size]
 
         # Final product between attention and V
-        final_mul = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
+        out = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
         # output : [batch_size, num_heads, seq_size, V_dimension] #WHERE V_dimension is the 
         # dimension of a single attention head
         #print('Final mul shape: ', final_mul.shape)
-
-        v_change = (final_mul * R_permute).permute(0,2,1,3).contiguous()
-        # v_change = [batch_size, seq_size, num_heads, v_dim]
-
-        #reshape the self tensor 
-        out = v_change.reshape(batch_size, -1, self.n_heads * head_dim)
-        # out = [batch_size, src_seq_size, n_heads * d_v]
-        #or
-        # out = [batch_size, src_seq_size, embedding_size]
-        #print('Out shape: ', out.shape)
 
         out = self.fc_out(out)
         # Out = [batch_size, seq_size, d_x]
