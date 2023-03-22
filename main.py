@@ -16,6 +16,7 @@ import pathlib
 path = pathlib.Path().resolve()
 train_path = os.path.join(path, 'Dataset/Train/**/*.txt')
 test_path = os.path.join(path, 'Dataset/Test/**/*.txt')
+demo_path = os.path.join(path, 'Demo/**/*.txt')
 #import test_dataset_loading
 import pytorch_lightning as pl
 import torch 
@@ -86,15 +87,16 @@ if __name__ == "__main__":
       #  #print('Trainer file list loaded')
     #model.to(device)
 
-    trainer = pl.Trainer(max_epochs=10)
+    trainer = pl.Trainer(max_epochs=1)
     #train_iterator = get_train_iterator('test.txt', batch_size, voc)
-    train_iterator = get_train_iterator2(train_path, batch_size, voc, 0.5 )
-    #test_iterator= get_test_iterator(batch_size, voc)
+    #train_iterator = get_train_iterator(train_path, batch_size, voc, 0.01 )
+    train_iterator = get_train_iterator(demo_path, batch_size, voc, 0.1 )
+    test_iterator= get_test_iterator(test_path, batch_size, voc)
     print('train_it', type(train_iterator))
     #trainer.fit(model, train_iterator)
     trainer.fit(model, train_dataloaders = train_iterator)
     torch.save(model, 'saved_' + sys.argv[1]+'.pt')
-
-      # Perform evaluation
-        #trainer.test(mlp, DataLoader(dataset_test, num_workers=15, pin_memory=True))
+    print('Starting evaluation of the model')
+    #Perform evaluation
+    trainer.test(test_dataloaders = test_iterator)
         

@@ -261,41 +261,8 @@ def get_valid_loader(dataset, train_dataset, batch_size, num_workers=0, shuffle=
 
 
 
-def get_train_iterator(filename, batch_size, vocab ):
-    data=[]
-    with open(filename) as f:
-        lines = f.readlines()
-        print('Loading file : ', filename, ' file-len: ',  len(lines))
-
-    stripped=[]
-    for i in lines:
-        stripped.append(i.strip())
-
-    i=0
-    while i<len(stripped)-1:
-        data.append([stripped[i], stripped[i+1]])
-        i=i+2
-
-
-    data=pd.DataFrame(data,columns=['Question','Answer'])
-    val_frac = 0.1 #precentage data in val
-    val_split_idx = int(len(data)*val_frac) #index on which to split
-    data_idx = list(range(len(data))) #create a list of ints till len of data
-    np.random.shuffle(data_idx)
-
-    #get indexes for validation and train
-    val_idx, train_idx = data_idx[:val_split_idx], data_idx[val_split_idx:]
-    print('len of train: ', len(train_idx))
-    print('len of val: ', len(val_idx))
-
-    #create the sets
-    train = data.iloc[train_idx].reset_index().drop('index',axis=1)
-    val = data.iloc[val_idx].reset_index().drop('index',axis=1)
-    print("DataFrame Created")
-    train_dataset = Train_Dataset(data, 'Question', 'Answer', vocab)
-    return get_train_loader(train_dataset, batch_size)
-
-def get_train_iterator2(train_path, batch_size, vocab, percentage ):
+def get_train_iterator(train_path, batch_size, vocab, percentage ):
+    print('Loading train dataset...')
     data=[]
     for file in glob.iglob(train_path, recursive=True):
 
@@ -315,8 +282,8 @@ def get_train_iterator2(train_path, batch_size, vocab, percentage ):
         while i<len(stripped)-1:
             data.append([stripped[i], stripped[i+1]])
             i=i+2
-        print('File appended')
-    print('Dataset loaded: Loaded ', len(data), ' items, percentage: ', percentage)
+        #print('File appended')
+    print('Dataset loaded: Loaded ', len(data), ' train items, percentage: ', percentage)
 
 
     data=pd.DataFrame(data,columns=['Question','Answer'])
@@ -331,13 +298,13 @@ def tensor_to_string(vocab, input):
         result += vocab.itos[int(i)]
     return result
 
-def get_test_iterator(batch_size, vocab ):
+def get_test_iterator(test_path, batch_size, vocab ):
     data=[]
     for file in glob.iglob(test_path, recursive=True):
 
         with open(file) as f:
             lines = f.readlines()
-            print('Loading file : ', file, ' file-len: ',  len(lines))
+            #print('Loading file : ', file, ' file-len: ',  len(lines))
 
         stripped=[]
         for i in lines:
@@ -348,6 +315,7 @@ def get_test_iterator(batch_size, vocab ):
             data.append([stripped[i], stripped[i+1]])
             i=i+2
 
+    print('Dataset loaded: Loaded ', len(data), ' test items')
 
     data=pd.DataFrame(data,columns=['Question','Answer'])
     train_dataset = Train_Dataset(data, 'Question', 'Answer', vocab)
