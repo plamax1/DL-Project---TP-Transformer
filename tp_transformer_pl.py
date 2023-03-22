@@ -240,7 +240,7 @@ class Decoder (pl.LightningModule):
             #print('DECODER - after_softmax_shape ', prob_out.shape)
 
         return prob_out
-class Transformer(pl.LightningModule):
+class TpTransformer(pl.LightningModule):
     def __init__(
         self,
         src_vocab_size,

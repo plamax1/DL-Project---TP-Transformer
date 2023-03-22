@@ -50,14 +50,19 @@ class SelfAttention(pl.LightningModule):
         #print('QKVR shape: ', Q.shape)
 
         #permutation to QKV matrix
-        Q_permute = Q.permute(0,2,1,3)
-        K_permute = K.permute(0,2,1,3)
-        V_permute = V.permute(0,2,1,3)
+        #Q_permute = Q.permute(0,2,1,3)
+        #K_permute = K.permute(0,2,1,3)
+        #V_permute = V.permute(0,2,1,3)
+        #The numbers in the permute are the dimensions
+        Q_permute = Q
+        K_permute = K
+        V_permute = V
         #The numbers in the permute are the dimensions
         #print('QKVR shape after (0,2,1,3) permutation: ', Q_permute.shape)
-
+        energy = torch.einsum("nqhd,nkhd->nhqk", [Q,K])
         # Product between Q and K ==> (Q*K)
-        energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)
+        #energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)
+        
         # energy : [batch_size, num_heads, query_len, key_len]
         # energy : [batch_size, num_heads, seq_len, seq_len]
 
@@ -69,12 +74,14 @@ class SelfAttention(pl.LightningModule):
             #print('Mask applied mask...')    
             #print('Masked Energy shape: ', energy.shape)
         # Apply the Softmax linear function and dropout 
-        attention = self.dropout(F.softmax(energy / (self.embedding_dim**(1/2))), dim =-1).reshape(batch_size, query.shape[1], self.n_heads*self.head_dim)
+        #print('ENERGY SHAPE: ', energy.shape)
+        attention = self.dropout(F.softmax(energy / (self.embedding_dim**(1/2)), dim =-1))
         #print('Attention shape: ', energy.shape)
         # attention = [batch_size, n_heads, seq_size, seq_size]
 
         # Final product between attention and V
-        out = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
+        #out = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
+        out =  out = torch.einsum("nhql,nlhd->nqhd", [attention, V]).reshape(batch_size, query.shape[1], int(self.n_heads*self.head_dim))
         # output : [batch_size, num_heads, seq_size, V_dimension] #WHERE V_dimension is the 
         # dimension of a single attention head
         #print('Final mul shape: ', final_mul.shape)

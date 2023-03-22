@@ -9,6 +9,7 @@ import sys
 import glob
 import torch.optim as optim
 from tp_transformer_pl import *
+from transformer import Transformer
 
 import os
 import pathlib
@@ -35,12 +36,11 @@ def add_padding(data, max_lenght):
     return result
 
 if __name__ == "__main__":
-    batch_size= 1024
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     try:
         model_name = sys.argv[1]
-        batch_size = sys.argv[2]
+        batch_size = int(sys.argv[2])
     except:
         print('Usage python main.py model_name batch_size')
         exit(0)
@@ -68,11 +68,13 @@ if __name__ == "__main__":
                 print(tensor_to_string(preds[1:-1]))
 
     if(sys.argv[1].strip()=='tp-transformer'):
-        model = Transformer(73, 73, 0, 0, device='cpu').to(device)
+        model = TpTransformer(73, 73, 0, 0, device='cpu')
     if(sys.argv[1].strip()=='classifier'):
         model = Multiclass(200, 35, 73)
         print('Model built')
-    if(not(sys.argv[1]=='classifier' or sys.argv[1]=='tp-transformer')):
+    if(sys.argv[1].strip()=='transformer'):
+        model = Transformer(73, 73, 0, 0, device='cpu')
+    if(not(sys.argv[1]=='classifier' or sys.argv[1]=='tp-transformer' or sys.argv[1]=='transformer')):
         print('Model not implemented yet, you can choose tp-transformer, classifier')
         exit(0)
 
