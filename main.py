@@ -1,5 +1,5 @@
 #from test_dataset_loading import *
-from dataset_loading import Vocabulary, get_train_iterator, get_train_iterator2, tensor_to_string, get_test_iterator
+from dataset_loading import Vocabulary, get_train_iterator, tensor_to_string, get_test_iterator
 import torch
 import time
 import torch.nn as nn
@@ -56,7 +56,14 @@ if __name__ == "__main__":
     #Create model
     print('Creating model...')
     print('ARGV[1]=', sys.argv[1])
-    
+    if(sys.argv[1].strip()=='test'):
+        model = torch.load('saved_transformer.pt')
+        print('Model loaded succesfully')
+        print(model)
+        trainer = pl.Trainer(max_epochs=1)
+        test_iterator= get_test_iterator(test_path, batch_size, voc)
+        trainer.test(model, dataloaders = test_iterator)
+
     if(sys.argv[1].strip()=='ask'):
         #model = torch.load('tp-transformer.pt')
         print('Model loaded successfully', model)
@@ -89,8 +96,8 @@ if __name__ == "__main__":
 
     trainer = pl.Trainer(max_epochs=1)
     #train_iterator = get_train_iterator('test.txt', batch_size, voc)
-    #train_iterator = get_train_iterator(train_path, batch_size, voc, 0.01 )
-    train_iterator = get_train_iterator(demo_path, batch_size, voc, 0.1 )
+    #train_iterator = get_train_iterator(train_path, batch_size, voc, 0.005 )
+    train_iterator = get_train_iterator(demo_path, batch_size, voc, 0.005 )
     test_iterator= get_test_iterator(test_path, batch_size, voc)
     print('train_it', type(train_iterator))
     #trainer.fit(model, train_iterator)
@@ -98,5 +105,6 @@ if __name__ == "__main__":
     torch.save(model, 'saved_' + sys.argv[1]+'.pt')
     print('Starting evaluation of the model')
     #Perform evaluation
-    trainer.test(test_dataloaders = test_iterator)
+    trainer.test( dataloaders = test_iterator)
+    #trainer.test(model)
         

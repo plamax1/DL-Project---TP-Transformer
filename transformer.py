@@ -333,10 +333,6 @@ class Transformer(pl.LightningModule):
         return nn.CrossEntropyLoss(ignore_index=0)(logits.reshape(-1, 73), torch.flatten(labels))
         
     def training_step(self, train_batch):
-        #filelist = ['test.txt']
-        #for file in filelist:
-         #   print('Loading file : ', file)
-          #  train_batch=get_train_iterator(file, 10, voc)
             x = train_batch[0]
             y= train_batch[1]
             logits = self.forward(x, y)
@@ -344,13 +340,13 @@ class Transformer(pl.LightningModule):
             self.log('train_loss', loss)
             return loss
     
-    def test_step(self, test_batch,):
+    def test_step(self, test_batch, other):
         x = test_batch[0]
         y= test_batch[1]
         x = x.view(x.size(0), -1)
-        logits = self.forward(x)
-        loss = self.nllloss(logits, y)
-        prediction = torch.argmax(logits, dim=1)
+        logits = self.forward(x,y)
+        loss = self.crossEntropyLoss(logits, y)
+        prediction = torch.argmax(logits, dim=-1)
         accuracy = torch.sum(y == prediction).item() / (len(y) * 1.0)
         output = dict({
             'test_loss': loss,
