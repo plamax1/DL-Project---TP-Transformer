@@ -4,10 +4,25 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 print('Successful import of transformer module')
-import pytorch_lightning as pl
+'''
+class PositionsEncoding(nn.Module):
+    def __init__(self, vocab_dim, embedding_dim, dropout, lenght):
+        super(PositionsEncoding,self).__init__
+        self.dropout = nn.Dropout(dropout)
+        self.lenght=lenght
+        self.embedding_dim = embedding_dim
 
+        #token encoding
+        self.embedding = nn.Embedding(vocab_dim, embedding_dim )
+        self.scaling = torch.sqrt(torch.FloatTensor([embedding_dim]))
 
-class SelfAttention(pl.LightningModule):
+        #sinusoidal encoding
+        pos_enc = torch.zeros(lenght, embedding_dim)
+        # create a o matriz on lenght rows, one for each word, 
+        #and for each word create embedding_dim cols, for the encoding of each word
+'''
+
+class SelfAttention(nn.Module):
     ###***### Should be ok, need masks
     def __init__(self, embedding_dim, n_heads, dropout):
         super(SelfAttention, self).__init__()
@@ -103,7 +118,7 @@ class SelfAttention(pl.LightningModule):
     
 
 
-class TransformerBlock (pl.LightningModule):
+class TransformerBlock (nn.Module):
     def __init__(self, embedding_dim, num_heads, dropout):
         super(TransformerBlock, self).__init__()
         self.attention= SelfAttention(embedding_dim,num_heads,dropout)
@@ -135,12 +150,12 @@ class TransformerBlock (pl.LightningModule):
         return out
     
 
-class Encoder (pl.LightningModule):
+class Encoder (nn.Module):
     def __init__(self,vocab_size, embedding_dim, num_trans_block, num_heads, device, dropout, max_input_len):
         super(Encoder, self).__init__()
         #print('Vocab Size: ', vocab_size )
 
-        #self.device = device
+        self.device = device
 
         self.token_embedding = nn.Embedding(vocab_size, embedding_dim)
         self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
@@ -174,9 +189,9 @@ class Encoder (pl.LightningModule):
             out = i(out, out, out, mask)
         return out
     
-class DecoderBlock(pl.LightningModule):
+class DecoderBlock(nn.Module):
     def __init__(self, embedding_dim, num_heads, dropout, device):
-        #self.device = device
+        self.device = device
         super(DecoderBlock, self).__init__()
         self.attention = SelfAttention(embedding_dim, num_heads, dropout)
         self.n1 = nn.LayerNorm(embedding_dim)
@@ -201,14 +216,14 @@ class DecoderBlock(pl.LightningModule):
         ### Tutta la parte di sopra dell' encoder è definita come transformer block
         ### Capire bene perchè e cosa sono le mask
 
-class Decoder (pl.LightningModule):
+class Decoder (nn.Module):
     def __init__(self, target_voc_size, embedding_dim, num_heads, num_transformer_block, dropout, device, max_input_len ):
         super(Decoder, self). __init__()
-        #self.device = device
+        self.device = device
         self.tok_embedding = nn.Embedding(target_voc_size, embedding_dim)
         self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
         self.decoder_blocks = nn.ModuleList(
-            [DecoderBlock(embedding_dim,num_heads, dropout, self.device)
+            [DecoderBlock(embedding_dim,num_heads, dropout, device)
              for _ in range (num_transformer_block)]
         )
 
@@ -240,7 +255,7 @@ class Decoder (pl.LightningModule):
             #print('DECODER - after_softmax_shape ', prob_out.shape)
 
         return prob_out
-class TpTransformer(pl.LightningModule):
+class Transformer(nn.Module):
     def __init__(
         self,
         src_vocab_size,
@@ -266,8 +281,8 @@ class TpTransformer(pl.LightningModule):
             dropout,
             max_length
         )'''
-        self.encoder= Encoder(src_vocab_size, embed_size, num_layers, heads, self.device, dropout, 200)
-        self.decoder= Decoder(trg_vocab_size, embed_size, heads,num_layers,dropout, self.device, max_input_len=200)
+        self.encoder= Encoder(src_vocab_size, embed_size, num_layers, heads, device, dropout, 200)
+        self.decoder= Decoder(trg_vocab_size, embed_size, heads,num_layers,dropout, device, max_input_len=200)
         '''self.decoder = Decoder(
             trg_vocab_size,
             embed_size,
@@ -281,7 +296,7 @@ class TpTransformer(pl.LightningModule):
         #self.src_pad_idx = src_pad_idx
         self.src_pad_idx = 0
         self.trg_pad_idx = trg_pad_idx
-        #self.device = device
+        self.device = device
         self.pad_idx=0
 
 
@@ -330,40 +345,8 @@ class TpTransformer(pl.LightningModule):
         # logits = [batch_size, trg_seq_size, d_vocab]
 
         return out
-    
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)
 
-        return optimizer
-    
-    def crossEntropyLoss(self, logits, labels):
-        #print('LOSS: logits shape: ', logits.shape)
-        #print('LOSS: target shape: ', labels.shape)
-        #return nn.NLLLoss()(logits.reshape(-1, 73), torch.flatten(labels).long())
-        return nn.CrossEntropyLoss(ignore_index=0)(logits.reshape(-1, 73), torch.flatten(labels))
-        
-    def training_step(self, train_batch):
-        #filelist = ['test.txt']
-        #for file in filelist:
-         #   print('Loading file : ', file)
-          #  train_batch=get_train_iterator(file, 10, voc)
-            x = train_batch[0]
-            y= train_batch[1]
-            logits = self.forward(x, y)
-            loss = self.crossEntropyLoss(logits, y)
-            self.log('train_loss', loss)
-            return loss
-    
-    def test_step(self, test_batch,):
-        x = test_batch[0]
-        y= test_batch[1]
-        x = x.view(x.size(0), -1)
-        logits = self.forward(x)
-        loss = self.nllloss(logits, y)
-        prediction = torch.argmax(logits, dim=1)
-        accuracy = torch.sum(y == prediction).item() / (len(y) * 1.0)
-        output = dict({
-            'test_loss': loss,
-            'test_acc': torch.tensor(accuracy),
-        })
-        return output
+
+print('Creating model in module...')
+#model = Transformer(100, 100, 0, 0)
+#Transformer(200, 200, 0, 0)
