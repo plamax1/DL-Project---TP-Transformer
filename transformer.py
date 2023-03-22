@@ -93,6 +93,8 @@ class SelfAttention(pl.LightningModule):
     
 
 
+
+
 class TransformerBlock (pl.LightningModule):
     def __init__(self, embedding_dim, num_heads, dropout):
         super(TransformerBlock, self).__init__()
@@ -126,12 +128,9 @@ class TransformerBlock (pl.LightningModule):
     
 
 class Encoder (pl.LightningModule):
-    def __init__(self,vocab_size, embedding_dim, num_trans_block, num_heads, device, dropout, max_input_len):
+    def __init__(self,vocab_size, embedding_dim, num_trans_block, num_heads, dropout, max_input_len):
         super(Encoder, self).__init__()
         #print('Vocab Size: ', vocab_size )
-
-        #self.device = device
-
         self.token_embedding = nn.Embedding(vocab_size, embedding_dim)
         self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
         #print('TOK EMBEDDING: ', self.token_embedding)
@@ -152,7 +151,7 @@ class Encoder (pl.LightningModule):
         tok_embedding = self.token_embedding(input)
         #print('Token Embedding shape: ', tok_embedding.shape)
         #Embedding shape [batch_size, seq_len(num of token per sentence), embedding_size]
-        pos= torch.arange(0, seq_lenght).expand(N, seq_lenght).to(self.device)
+        pos= torch.arange(0, seq_lenght).expand(N, seq_lenght)
         pos_embedding = self.positional_embedding(pos)
         #print('Pos embedding shape: ', pos_embedding.shape)
         #Sum the position encoding + the token encoding to get the positional encoding
@@ -165,7 +164,7 @@ class Encoder (pl.LightningModule):
         return out
     
 class DecoderBlock(pl.LightningModule):
-    def __init__(self, embedding_dim, num_heads, dropout, device):
+    def __init__(self, embedding_dim, num_heads, dropout):
         #self.device = device
         super(DecoderBlock, self).__init__()
         self.attention = SelfAttention(embedding_dim, num_heads, dropout)
@@ -192,17 +191,16 @@ class DecoderBlock(pl.LightningModule):
         ### Capire bene perchè e cosa sono le mask
 
 class Decoder (pl.LightningModule):
-    def __init__(self, target_voc_size, embedding_dim, num_heads, num_transformer_block, dropout, device, max_input_len ):
+    def __init__(self, vocab_size, embedding_dim, num_heads, num_transformer_block, dropout, max_input_len):
         super(Decoder, self). __init__()
-        #self.device = device
-        self.tok_embedding = nn.Embedding(target_voc_size, embedding_dim)
+        self.tok_embedding = nn.Embedding(vocab_size, embedding_dim)
         self.positional_embedding = nn.Embedding(max_input_len, embedding_dim)
         self.decoder_blocks = nn.ModuleList(
-            [DecoderBlock(embedding_dim,num_heads, dropout, self.device)
+            [DecoderBlock(embedding_dim,num_heads, dropout)
              for _ in range (num_transformer_block)]
         )
 
-        self.linear = nn.Linear(embedding_dim, target_voc_size)
+        self.linear = nn.Linear(embedding_dim, vocab_size)
         self.dropout= nn.Dropout(dropout)
         self.softmax = nn.Softmax(dim=2)
 
@@ -230,50 +228,25 @@ class Decoder (pl.LightningModule):
             #print('DECODER - after_softmax_shape ', prob_out.shape)
 
         return prob_out
-class Transformer(pl.LightningModule):
+class TpTransformer(pl.LightningModule):
     def __init__(
         self,
-        src_vocab_size,
-        trg_vocab_size,
-        src_pad_idx,
-        trg_pad_idx,
+        vocab_size,
         embed_size=512,
         num_layers=6,
         heads=8,
         dropout=0,
-        device="cpu",
-        max_length=100,
-    ):
+        max_input_len=200
+        ):
 
-        super(Transformer, self).__init__()
+        super(TpTransformer, self).__init__()
+        self.encoder= Encoder(vocab_size, embed_size, num_layers, heads, dropout, max_input_len)
+        self.decoder= Decoder(vocab_size, embed_size, heads,num_layers,dropout, max_input_len)
 
-        '''self.encoder = Encoder(
-            src_vocab_size,
-            embed_size,
-            num_layers,
-            heads,
-            device,
-            dropout,
-            max_length
-        )'''
-        self.encoder= Encoder(src_vocab_size, embed_size, num_layers, heads, self.device, dropout, 200)
-        self.decoder= Decoder(trg_vocab_size, embed_size, heads,num_layers,dropout, self.device, max_input_len=200)
-        '''self.decoder = Decoder(
-            trg_vocab_size,
-            embed_size,
-            num_layers,
-            heads,
-            dropout,
-            device,
-            max_length
-        )'''
 
         #self.src_pad_idx = src_pad_idx
-        self.src_pad_idx = 0
-        self.trg_pad_idx = trg_pad_idx
-        #self.device = device
-        self.pad_idx=0
-
+        self.pad_idx = 0
+        
 
     def make_src_mask(self, src):
         # src = [batch size, src sent len]
@@ -333,11 +306,15 @@ class Transformer(pl.LightningModule):
         return nn.CrossEntropyLoss(ignore_index=0)(logits.reshape(-1, 73), torch.flatten(labels))
         
     def training_step(self, train_batch):
+        #filelist = ['test.txt']
+        #for file in filelist:
+         #   print('Loading file : ', file)
+          #  train_batch=get_train_iterator(file, 10, voc)
             x = train_batch[0]
             y= train_batch[1]
             logits = self.forward(x, y)
             loss = self.crossEntropyLoss(logits, y)
-            self.log('train_loss', loss, prog_bar=True, logger=True)
+            self.log('train_loss', loss)
             return loss
     
     def test_step(self, test_batch, other):

@@ -1,6 +1,7 @@
 #from test_dataset_loading import *
 from dataset_loading import Vocabulary, get_train_iterator, tensor_to_string, get_test_iterator
 import torch
+import argparse
 import time
 import torch.nn as nn
 from utils import *
@@ -36,77 +37,79 @@ def add_padding(data, max_lenght):
     result= torch.stack(result)
     #print('result shape: ', result.shape)
     return result
+def bar():
+    print('BAR CALLED')
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+    description='Question answerin on mathematic dataset')
+    
+    ######### python main.py load_eval model_name per_test dataset
+    ######### python main.py train model_name batch_size per_train_dataset per_test_dataset
+
+    parser.add_argument('--mode', type=str, default=None,
+                    help='usage mode: select load_eval or train (default: "")')
+    parser.add_argument('--model', type=str, default=None,
+                    help='choose among: Transformer, Tp-transformer or Classifier (default: "")')
+    parser.add_argument('--model_name', type=str, default='model.pt',
+                    help='path of the model you want to load (default: "model.pt")')
+    parser.add_argument('--train_pct', type=int, default=1,
+                    help='Insert the percentage of the train dataset you wanto to load [0,1] (default: "1")')
+    parser.add_argument('--test_pct', type=int, default=1,
+                    help='Insert the percentage of the test dataset you wanto to load [0,1] (default: "1")')
+    parser.add_argument('--batch_size', type=int, default=1024,
+                    help='the batch size for each step (default: "1024")')
+    parser.add_argument('--epochs', type=int, default=10,
+                    help='the number of epochs you want the trainer to run for (default: "10")')
+    
+    arguments = parser.parse_args()
+    batch_size = arguments.batch_size
+    epochs = arguments.epochs
+    mode = arguments.mode
+    model_name = arguments.model_name
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
-    try:
-        model_name = sys.argv[1]
-        batch_size = int(sys.argv[2])
-    except:
-        print('Usage python main.py model_name batch_size')
-        exit(0)
-
-
+    #Defining parameters
+    vocab_size = 73
     # Creating vocab
-    voc = Vocabulary(73) #73 is the vocabulary len used in the paper
+    voc = Vocabulary(vocab_size) #73 is the vocabulary len used in the paper
     #build vocab
     voc.build_vocabulary()
     print('VOCABULARY CREATED')
     #Create model
     print('Creating model...')
-    print('ARGV[1]=', sys.argv[1])
-    if(sys.argv[1].strip()=='test'):
-        model = torch.load('saved_transformer.pt')
-        print('Model loaded succesfully')
-        print(model)
-        trainer = pl.Trainer(max_epochs=1)
+    if arguments.model=='Classifier':
+        model = Multiclass(200, 35, 73)
+    elif arguments.model=='Tp-transformer':
+        model = TpTransformer(vocab_size)
+    elif arguments.model=='Transformer':
+        model = Transformer(73, 73, 0, 0, device='cpu')
+    else: 
+        print('Only 3 models available: Transformer, Tp-transformer, Classifier \n Mind the initial uppercase')
+        exit(1)
+
+
+    if(mode=='load_eval'):
+        model = torch.load(model_name)
+        print('Model loaded succesfully: ', model_name)
+        #print(model)
+        trainer = pl.Trainer()
         test_iterator= get_test_iterator(test_path, batch_size, voc)
         trainer.test(model, dataloaders = test_iterator)
-
-    if(sys.argv[1].strip()=='ask'):
-        #model = torch.load('tp-transformer.pt')
-        print('Model loaded successfully', model)
-        while(1):
-                question = input("Insert a Question for the model: ")
-                tkq=torch.tensor([voc.stoi['<SOS>']])
-                tkq= torch.cat((tkq, torch.tensor(voc.numericalize(list(question))), torch.tensor([voc.stoi['<EOS>']])))
-                print('passing to the model: ', tkq)
-                print('Stringa prodotta: ', tensor_to_string(voc, tkq))
-                preds = model(tkq)
-                print(tensor_to_string(preds[1:-1]))
-
-    if(sys.argv[1].strip()=='tp-transformer'):
-        model = TpTransformer(73, 73, 0, 0, device='cpu')
-    if(sys.argv[1].strip()=='classifier'):
-        model = Multiclass(200, 35, 73)
-        print('Model built')
-    if(sys.argv[1].strip()=='transformer'):
-        model = Transformer(73, 73, 0, 0, device='cpu')
-    if(not(sys.argv[1]=='classifier' or sys.argv[1]=='tp-transformer' or sys.argv[1]=='transformer')):
-        print('Model not implemented yet, you can choose tp-transformer, classifier')
-        exit(0)
-
-    #Pre-loading dataset files:
-    #filelist=[]
-    #for file in glob.iglob(train_path, recursive=True):
-     #   filelist.append(file)
-      #  #print('Trainer file list loaded')
-    #model.to(device)
-
-    trainer = pl.Trainer(max_epochs=1)
-    #train_iterator = get_train_iterator('test.txt', batch_size, voc)
-    #train_iterator = get_train_iterator(train_path, batch_size, voc, 0.005 )
-    print('Getting train iterator')
-    train_iterator = get_train_iterator(demo_path, batch_size, voc, 0.2 )
-    print('Getting train iterator')
-    test_iterator= get_train_iterator(test_path, batch_size, voc, 1)
-    print('train_it', type(train_iterator))
-    #trainer.fit(model, train_iterator)
-    trainer.fit(model, train_dataloaders = train_iterator)
-    torch.save(model, 'saved_' + sys.argv[1]+'.pt')
-    print('Starting evaluation of the model')
-    #Perform evaluation
-    print(trainer.test( model, dataloaders = test_iterator))
-    #trainer.test(model)
-        
+    elif(model=='train'):
+        trainer = pl.Trainer(max_epochs=epochs)
+        #train_iterator = get_train_iterator('test.txt', batch_size, voc)
+        #train_iterator = get_train_iterator(train_path, batch_size, voc, 0.005 )
+        print('Getting train iterator')
+        train_iterator = get_train_iterator(demo_path, batch_size, voc, 0.005 )
+        print('Getting train iterator')
+        test_iterator= get_train_iterator(test_path, batch_size, voc, 0.0005)
+        trainer.fit(model, train_dataloaders = train_iterator)
+        print('Saving model...')
+        torch.save(model, 'saved_' + sys.argv[1]+'.pt')
+        print('Model saved...')
+        print('Starting evaluation of the model...')
+        #Perform evaluation
+        print(trainer.test( model, dataloaders = test_iterator))
+            
