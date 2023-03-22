@@ -53,6 +53,7 @@ class SelfAttention(pl.LightningModule):
         K = K.reshape(batch_size, -1, self.n_heads, head_dim)
         V = V.reshape(batch_size, -1, self.n_heads, head_dim)
         R = R.reshape(batch_size, -1, self.n_heads, head_dim)
+        #Reshaped shape: [batch_size, seq_len, n_heads, heads_dim]
         #print('QKVR shape: ', Q.shape)
 
         #permutation to QKV matrix
@@ -62,9 +63,11 @@ class SelfAttention(pl.LightningModule):
         R_permute = R.permute(0,2,1,3)
         #The numbers in the permute are the dimensions
         #print('QKVR shape after (0,2,1,3) permutation: ', Q_permute.shape)
+        #shape after permutation: [batch_size, n_heads, seq_len, heads_dim]
 
         # Product between Q and K ==> (Q*K)
-        energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)
+        ##!!!##energy = torch.einsum("bhid,bhjd->bhij" , Q_permute ,K_permute)
+        energy = torch.einsum("bihd,bjhd->bhij" , [Q ,K])
         # energy : [batch_size, num_heads, query_position, key_position]
         # energy : [batch_size, num_heads, seq_len, seq_len]
 
@@ -81,12 +84,14 @@ class SelfAttention(pl.LightningModule):
         # attention = [batch_size, n_heads, seq_size, seq_size]
 
         # Final product between attention and V
-        final_mul = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
+        ##!!!##final_mul = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
+        final_mul = torch.einsum("nhql,nlhd->nqhd", [attention, V])
         # output : [batch_size, num_heads, seq_size, V_dimension] #WHERE V_dimension is the 
         # dimension of a single attention head
         #print('Final mul shape: ', final_mul.shape)
 
-        v_change = (final_mul * R_permute).permute(0,2,1,3).contiguous()
+        ###!!!###v_change = (final_mul * R_permute).permute(0,2,1,3).contiguous()
+        v_change = (final_mul * R).contiguous()
         # v_change = [batch_size, seq_size, num_heads, v_dim]
 
         #reshape the self tensor 

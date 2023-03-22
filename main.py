@@ -67,6 +67,10 @@ if __name__ == "__main__":
     epochs = arguments.epochs
     mode = arguments.mode
     model_name = arguments.model_name
+    
+    if(not (mode=='train' or mode=='load_eval')):
+        print('Only 2 modes available: train and load eval')
+        exit(1)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -97,7 +101,7 @@ if __name__ == "__main__":
         trainer = pl.Trainer()
         test_iterator= get_test_iterator(test_path, batch_size, voc)
         trainer.test(model, dataloaders = test_iterator)
-    elif(model=='train'):
+    elif(mode=='train'):
         trainer = pl.Trainer(max_epochs=epochs)
         #train_iterator = get_train_iterator('test.txt', batch_size, voc)
         #train_iterator = get_train_iterator(train_path, batch_size, voc, 0.005 )

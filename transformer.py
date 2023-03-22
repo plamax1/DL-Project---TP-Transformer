@@ -48,15 +48,7 @@ class SelfAttention(pl.LightningModule):
         K = K.reshape(batch_size, -1, self.n_heads, head_dim)
         V = V.reshape(batch_size, -1, self.n_heads, head_dim)
         #print('QKVR shape: ', Q.shape)
-
-        #permutation to QKV matrix
-        #Q_permute = Q.permute(0,2,1,3)
-        #K_permute = K.permute(0,2,1,3)
-        #V_permute = V.permute(0,2,1,3)
-        #The numbers in the permute are the dimensions
-        Q_permute = Q
-        K_permute = K
-        V_permute = V
+        #Q shape: [batch_size, seq_len, n_heads, head_dim]
         #The numbers in the permute are the dimensions
         #print('QKVR shape after (0,2,1,3) permutation: ', Q_permute.shape)
         energy = torch.einsum("nqhd,nkhd->nhqk", [Q,K])
@@ -81,7 +73,7 @@ class SelfAttention(pl.LightningModule):
 
         # Final product between attention and V
         #out = torch.einsum("bhjd,bhij->bhid", V_permute, attention)
-        out =  out = torch.einsum("nhql,nlhd->nqhd", [attention, V]).reshape(batch_size, query.shape[1], int(self.n_heads*self.head_dim))
+        out  = torch.einsum("nhql,nlhd->nqhd", [attention, V]).reshape(batch_size, query.shape[1], int(self.n_heads*self.head_dim))
         # output : [batch_size, num_heads, seq_size, V_dimension] #WHERE V_dimension is the 
         # dimension of a single attention head
         #print('Final mul shape: ', final_mul.shape)
@@ -228,7 +220,7 @@ class Decoder (pl.LightningModule):
             #print('DECODER - after_softmax_shape ', prob_out.shape)
 
         return prob_out
-class TpTransformer(pl.LightningModule):
+class Transformer(pl.LightningModule):
     def __init__(
         self,
         vocab_size,
