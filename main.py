@@ -80,11 +80,11 @@ if __name__ == "__main__":
     #Create model
     print('Creating model...')
     if arguments.model=='Classifier':
-        model = Multiclass(200, 35, 73)
+        model = Multiclass(200, 35, vocab_size)
     elif arguments.model=='Tp-transformer':
         model = TpTransformer(vocab_size)
     elif arguments.model=='Transformer':
-        model = Transformer(73, 73, 0, 0, device='cpu')
+        model = Transformer(vocab_size)
     else: 
         print('Only 3 models available: Transformer, Tp-transformer, Classifier \n Mind the initial uppercase')
         exit(1)
@@ -112,4 +112,6 @@ if __name__ == "__main__":
         print('Starting evaluation of the model...')
         #Perform evaluation
         print(trainer.test( model, dataloaders = test_iterator))
-            
+    else:
+        print('Only 2 modes available: train and load eval')
+        exit(1)
