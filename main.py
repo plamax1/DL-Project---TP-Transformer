@@ -67,6 +67,8 @@ if __name__ == "__main__":
     epochs = arguments.epochs
     mode = arguments.mode
     model_name = arguments.model_name
+    train_pct = arguments.train_pct
+    test_pct = arguments.test_pct
     
     if(not (mode=='train' or mode=='load_eval')):
         print('Only 2 modes available: train and load eval')
@@ -106,9 +108,9 @@ if __name__ == "__main__":
         #train_iterator = get_train_iterator('test.txt', batch_size, voc)
         #train_iterator = get_train_iterator(train_path, batch_size, voc, 0.005 )
         print('Getting train iterator')
-        train_iterator = get_train_iterator(demo_path, batch_size, voc, 0.005 )
+        train_iterator = get_train_iterator(train_path, batch_size, voc, train_pct )
         print('Getting train iterator')
-        test_iterator= get_train_iterator(test_path, batch_size, voc, 0.0005)
+        test_iterator= get_train_iterator(test_path, batch_size, voc, test_pct)
         trainer.fit(model, train_dataloaders = train_iterator)
         print('Saving model...')
         torch.save(model, 'saved_' + sys.argv[1]+'.pt')

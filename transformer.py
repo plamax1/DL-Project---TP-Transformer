@@ -143,7 +143,7 @@ class Encoder (pl.LightningModule):
         tok_embedding = self.token_embedding(input)
         #print('Token Embedding shape: ', tok_embedding.shape)
         #Embedding shape [batch_size, seq_len(num of token per sentence), embedding_size]
-        pos= torch.arange(0, seq_lenght).expand(N, seq_lenght)
+        pos= torch.arange(0, seq_lenght).expand(N, seq_lenght).to(self.device)
         pos_embedding = self.positional_embedding(pos)
         #print('Pos embedding shape: ', pos_embedding.shape)
         #Sum the position encoding + the token encoding to get the positional encoding
