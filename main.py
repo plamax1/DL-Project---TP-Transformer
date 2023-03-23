@@ -37,8 +37,6 @@ def add_padding(data, max_lenght):
     result= torch.stack(result)
     #print('result shape: ', result.shape)
     return result
-def bar():
-    print('BAR CALLED')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -101,7 +99,7 @@ if __name__ == "__main__":
         print('Model loaded succesfully: ', model_name)
         #print(model)
         trainer = pl.Trainer()
-        test_iterator= get_test_iterator(test_path, batch_size, voc)
+        test_iterator= get_train_iterator(test_path, batch_size, voc, test_pct)
         trainer.test(model, dataloaders = test_iterator)
     elif(mode=='train'):
         trainer = pl.Trainer(max_epochs=epochs)

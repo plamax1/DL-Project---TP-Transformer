@@ -231,7 +231,7 @@ class Transformer(pl.LightningModule):
         max_input_len=200
         ):
 
-        super(TpTransformer, self).__init__()
+        super(Transformer, self).__init__()
         self.encoder= Encoder(vocab_size, embed_size, num_layers, heads, dropout, max_input_len)
         self.decoder= Decoder(vocab_size, embed_size, heads,num_layers,dropout, max_input_len)
 

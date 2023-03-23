@@ -283,7 +283,7 @@ def get_train_iterator(train_path, batch_size, vocab, percentage ):
             data.append([stripped[i], stripped[i+1]])
             i=i+2
         #print('File appended')
-    print('Dataset loaded: Loaded ', len(data), ' train items, percentage: ', percentage)
+    print('Dataset loaded: Loaded ', len(data), ' items, percentage: ', percentage)
 
 
     data=pd.DataFrame(data,columns=['Question','Answer'])
