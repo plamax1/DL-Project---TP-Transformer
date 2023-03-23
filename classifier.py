@@ -46,7 +46,7 @@ class Multiclass(pl.LightningModule):
     def nllloss(self, logits, labels):
         #print('LOSS: logits shape: ', logits.shape)
         #print('LOSS: target shape: ', labels.shape)
-        return nn.NLLLoss()(logits.reshape(-1, 73), torch.flatten(labels).long())
+        return nn.NLLLoss(ignore_index=0)(logits.reshape(-1, 73), torch.flatten(labels).long())
 
     def training_step(self, train_batch):
         x = self.add_padding(train_batch[0], 200)
