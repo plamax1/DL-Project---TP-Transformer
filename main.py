@@ -11,7 +11,7 @@ from classifier import Multiclass
 import sys
 import glob
 import torch.optim as optim
-from tp_transformer import *
+from tp_transformer import TpTransformer
 from transformer import Transformer
 
 import os
@@ -23,20 +23,6 @@ demo_path = os.path.join(path, 'Demo/**/*.txt')
 #import test_dataset_loading
 
 
-def add_padding(data, max_lenght):
-    result=[]
-    j=0
-    #print('add padding input shape: ', data.shape)
-    for i in data:
-        ln = len(i)
-        #print('ln: ', ln)
-        to_add = max_lenght-ln
-        result.append((torch.cat((i, torch.zeros(to_add)))))
-        #print('ishape: ', i.shape)
-        j+=1
-    result= torch.stack(result)
-    #print('result shape: ', result.shape)
-    return result
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -69,7 +55,7 @@ if __name__ == "__main__":
     test_pct = arguments.test_pct
     
     if(not (mode=='train' or mode=='load_eval')):
-        print('Only 2 modes available: train and load eval')
+        print('Only 2 modes available: train and load_eval')
         exit(1)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -15,14 +15,14 @@ class Multiclass(pl.LightningModule):
         self.vocab_size = vocab_size
 
     def add_padding(self, data, max_lenght):
-        result=[]
+        result=[].to(self.device)
         j=0
         #print('add padding input shape: ', data.shape)
         for i in data:
             ln = len(i)
             #print('ln: ', ln)
             to_add = max_lenght-ln
-            result.append((torch.cat((i, torch.zeros(to_add)))))
+            result.append((torch.cat((i.to(self.device), torch.zeros(to_add).to(self.device)))))
             #print('ishape: ', i.shape)
             j+=1
         result= torch.stack(result)
