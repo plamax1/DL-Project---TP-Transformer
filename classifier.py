@@ -15,7 +15,7 @@ class Multiclass(pl.LightningModule):
         self.vocab_size = vocab_size
 
     def add_padding(self, data, max_lenght):
-        result=[].to(self.device)
+        result=[]
         j=0
         #print('add padding input shape: ', data.shape)
         for i in data:
@@ -58,11 +58,15 @@ class Multiclass(pl.LightningModule):
     
     def test_step(self, test_batch, other):
         x = self.add_padding(test_batch[0], 200)
+        #y, _shape [batch_size, 200]
         y= self.add_padding(test_batch[1],35)
+        trg_len = test_batch[1].shape[1]
         logits = self.forward(x)
         loss = self.nllloss(logits, y)
         prediction = torch.argmax(logits, dim=-1)
-        accuracy = torch.sum(y == prediction).item() / (len(y) * 1.0)
+        ### We have to ignore padding index when testing accuracy
+        prediction_rm_pad =prediction.permute(1,0)[:trg_len].permute(1,0)
+        accuracy = torch.sum(test_batch[1] == prediction_rm_pad).item() / (len(y) * 1.0)
         output = dict({
             'test_loss': loss,
             'test_acc': torch.tensor(accuracy),

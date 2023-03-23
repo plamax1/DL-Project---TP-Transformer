@@ -262,7 +262,6 @@ def get_valid_loader(dataset, train_dataset, batch_size, num_workers=0, shuffle=
 
 
 def get_train_iterator(train_path, batch_size, vocab, percentage ):
-    print('Loading train dataset...')
     data=[]
     for file in glob.iglob(train_path, recursive=True):
 
