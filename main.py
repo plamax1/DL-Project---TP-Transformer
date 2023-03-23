@@ -53,9 +53,9 @@ if __name__ == "__main__":
                     help='choose among: Transformer, Tp-transformer or Classifier (default: "")')
     parser.add_argument('--model_name', type=str, default='model.pt',
                     help='path of the model you want to load (default: "model.pt")')
-    parser.add_argument('--train_pct', type=int, default=1,
+    parser.add_argument('--train_pct', type=float, default=1,
                     help='Insert the percentage of the train dataset you wanto to load [0,1] (default: "1")')
-    parser.add_argument('--test_pct', type=int, default=1,
+    parser.add_argument('--test_pct', type=float, default=1,
                     help='Insert the percentage of the test dataset you wanto to load [0,1] (default: "1")')
     parser.add_argument('--batch_size', type=int, default=1024,
                     help='the batch size for each step (default: "1024")')

@@ -79,7 +79,7 @@ class SelfAttention(pl.LightningModule):
             #print('Mask applied mask...')    
             #print('Masked Energy shape: ', energy.shape)
         # Apply the Softmax linear function and dropout 
-        attention = self.dropout(F.softmax(energy / self.dot_scale, dim =-1))
+        attention = self.dropout(F.softmax(energy / self.dot_scale.to(key.device), dim =-1))
         #print('Attention shape: ', energy.shape)
         # attention = [batch_size, n_heads, seq_size, seq_size]
 
