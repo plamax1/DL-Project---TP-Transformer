@@ -1,6 +1,8 @@
 #from test_dataset_loading import *
 from dataset_loading import Vocabulary, get_train_iterator, tensor_to_string, get_test_iterator
 import torch
+import pytorch_lightning as pl
+import torch 
 import argparse
 import time
 import torch.nn as nn
@@ -19,9 +21,7 @@ train_path = os.path.join(path, 'Dataset/Train/**/*.txt')
 test_path = os.path.join(path, 'Dataset/Test/**/*.txt')
 demo_path = os.path.join(path, 'Demo/**/*.txt')
 #import test_dataset_loading
-import pytorch_lightning as pl
-import torch 
-   # Use NLLLoss()
+
 
 def add_padding(data, max_lenght):
     result=[]
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         test_iterator= get_train_iterator(test_path, batch_size, voc, test_pct)
         trainer.fit(model, train_dataloaders = train_iterator)
         print('Saving model...')
-        torch.save(model, 'saved_' + sys.argv[1]+'.pt')
+        torch.save(model, 'saved_' + model_name+'.pt')
         print('Model saved...')
         print('Starting evaluation of the model...')
         #Perform evaluation
