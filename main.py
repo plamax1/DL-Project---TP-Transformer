@@ -20,7 +20,8 @@ path = pathlib.Path().resolve()
 train_path = os.path.join(path, 'Dataset/Train/**/*.txt')
 test_path = os.path.join(path, 'Dataset/Test/**/*.txt')
 demo_path = os.path.join(path, 'Demo/**/*.txt')
-#import test_dataset_loading
+
+### Source of Inspiration URL:
 
 
 
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     model_name = arguments.model_name
     train_pct = arguments.train_pct
     test_pct = arguments.test_pct
-    
+    model=arguments.model
     if(not (mode=='train' or mode=='load_eval')):
         print('Only 2 modes available: train and load_eval')
         exit(1)
@@ -97,7 +98,7 @@ if __name__ == "__main__":
         test_iterator= get_train_iterator(test_path, batch_size, voc, test_pct)
         trainer.fit(model, train_dataloaders = train_iterator)
         print('Saving model...')
-        torch.save(model, 'saved_' + model_name+'.pt')
+        torch.save(model, 'saved_' + model+'.pt')
         print('Model saved...')
         print('Starting evaluation of the model...')
         #Perform evaluation

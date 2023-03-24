@@ -36,9 +36,10 @@ from torch.utils.data import Dataset
 import pathlib
 import os
 
-#######################################################
-#               Define Vocabulary Class
-#######################################################
+### Source of Inspiration URL:
+### https://towardsdatascience.com/custom-datasets-in-pytorch-part-2-text-machine-translation-71c41a3e994e
+
+### Define Vocabulary Class
 
 class Vocabulary:
   
@@ -207,9 +208,9 @@ class Validation_Dataset:
         numerialized_target.append(self.train_dataset.target_vocab.stoi["<EOS>"])
         return torch.tensor(numerialized_source), torch.tensor(numerialized_target)
     
-#######################################################
-#               Collate fn 
-#######################################################
+
+#Collate fn 
+
 
 '''
 class to add padding to the batches
@@ -238,9 +239,8 @@ class MyCollate:
         #return source, target
         return torch.transpose(source, 0,1), torch.transpose(target, 0,1)
 
-#######################################################
-#            Define Dataloader Functions
-#######################################################
+#Define Dataloader Functions
+
 
 # If we run a next(iter(data_loader)) we get an output of batch_size * (num_workers+1)
 def get_train_loader(dataset, batch_size, num_workers=0, shuffle=True, pin_memory=True): #increase num_workers according to CPU

@@ -6,6 +6,10 @@ import torch.nn.functional as F
 print('Successful import of transformer module')
 import pytorch_lightning as pl
 
+### Source of Inspiration URL:
+### https://www.youtube.com/watch?v=U0s0f995w14&t=768s
+### https://github.com/ischlag/TP-Transformer
+### https://blog.floydhub.com/the-transformer-in-pytorch/
 
 class SelfAttention(pl.LightningModule):
     ###***### Should be ok, need masks
