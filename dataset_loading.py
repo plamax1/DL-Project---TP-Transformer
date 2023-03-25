@@ -319,8 +319,8 @@ def get_algebra_iterator(path, batch_size, vocab, percentage):
     print('Dataset loaded: Loaded ', len(data),
           ' items, percentage: ', percentage)
 
-    data_train = pd.DataFrame(data[:len(data)*0.9], columns=['Question', 'Answer'])
-    data_test = pd.DataFrame(data[len(data)*0.9:], columns=['Question', 'Answer'])
+    data_train = pd.DataFrame(data[:int(len(data)*0.9)], columns=['Question', 'Answer'])
+    data_test = pd.DataFrame(data[int(len(data)*0.9):], columns=['Question', 'Answer'])
     
     train_dataset = Train_Dataset(data_train, 'Question', 'Answer', vocab)
     test_dataset = Train_Dataset(data_test, 'Question', 'Answer', vocab)

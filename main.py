@@ -15,7 +15,8 @@ import os
 import pathlib
 path = pathlib.Path().resolve()
 train_path = os.path.join(path, 'Dataset/Train/**/*.txt')
-test_path = os.path.join(path, 'Dataset/Test/**/*.txt')
+test_path_int = os.path.join(path, 'Dataset/Test/interpolate**/*.txt')
+test_path_ext = os.path.join(path, 'Dataset/Test/extrapolate**/*.txt')
 demo_path = os.path.join(path, 'Demo/**/*.txt')
 algebra_path = os.path.join(path, 'Algebra/**/*.txt')
 
@@ -80,27 +81,42 @@ if __name__ == "__main__":
         print('Model loaded succesfully: ', model_name)
         # print(model)
         trainer = pl.Trainer()
-        test_iterator = get_train_iterator(
-            test_path, batch_size, voc, test_pct)
-        trainer.test(model, dataloaders=test_iterator)
+        print('Getting test iterator...')
+        test_iterator_int = get_train_iterator(
+                test_path_int, batch_size, voc, test_pct)
+        test_iterator_ext = get_train_iterator(
+                test_path_ext, batch_size, voc, test_pct)
+        print('Starting evaluation of the model...')
+        # Perform evaluation
+        print('Testing on interpolate test Dataset...')
+        print(trainer.test(model, dataloaders=test_iterator_int))
+        print('Testing on extrapolate test Dataset...')
+        print(trainer.test(model, dataloaders=test_iterator_ext))
     elif (mode == 'train'):
         trainer = pl.Trainer(max_epochs=epochs)
-        print('Getting train iterator...')
         if(algebra_demo=='yes'):
-            train_iterator, test_iterator = get_algebra_iterator(algebra_path, batch_size, vocab_size, 1)
+            print('Getting algebra train-test iterator...')
+            train_iterator, test_iterator = get_algebra_iterator(
+                algebra_path, batch_size, voc, 1)
         else:
+            print('Getting train iterator...')
             train_iterator = get_train_iterator(
                 demo_path, batch_size, voc, train_pct)
             print('Getting test iterator...')
-            test_iterator = get_train_iterator(
-                test_path, batch_size, voc, test_pct)
+            test_iterator_int = get_train_iterator(
+                test_path_int, batch_size, voc, test_pct)
+            test_iterator_ext = get_train_iterator(
+                test_path_ext, batch_size, voc, test_pct)
         trainer.fit(model, train_dataloaders=train_iterator)
         print('Saving model...')
         torch.save(model, 'saved_' + model_type+'.pt')
         print('Model saved...')
         print('Starting evaluation of the model...')
         # Perform evaluation
-        print(trainer.test(model, dataloaders=test_iterator))
+        print('Testing on interpolate test Dataset...')
+        print(trainer.test(model, dataloaders=test_iterator_int))
+        print('Testing on extrapolate test Dataset...')
+        print(trainer.test(model, dataloaders=test_iterator_ext))
     else:
         print('Only 2 modes available: train and load eval')
         exit(1)
