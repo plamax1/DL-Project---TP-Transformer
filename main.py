@@ -1,5 +1,5 @@
 # from test_dataset_loading import *
-from dataset_loading import Vocabulary, get_train_iterator
+from dataset_loading import Vocabulary, get_train_iterator, get_algebra_iterator
 import torch
 import pytorch_lightning as pl
 import torch
@@ -10,12 +10,15 @@ from classifier import Multiclass
 from tp_transformer import TpTransformer
 from transformer import Transformer
 
+
 import os
 import pathlib
 path = pathlib.Path().resolve()
 train_path = os.path.join(path, 'Dataset/Train/**/*.txt')
 test_path = os.path.join(path, 'Dataset/Test/**/*.txt')
 demo_path = os.path.join(path, 'Demo/**/*.txt')
+algebra_path = os.path.join(path, 'Algebra/**/*.txt')
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -34,7 +37,10 @@ if __name__ == "__main__":
                         help='the batch size for each step (default: "1024")')
     parser.add_argument('--epochs', type=int, default=10,
                         help='the number of epochs you want the trainer to run for (default: "10")')
-
+    
+    parser.add_argument('--algebra_demo', type=str, default='No',
+                        help='In you want to run in the algebra demo mode (default: "No")')
+    
     arguments = parser.parse_args()
     batch_size = arguments.batch_size
     epochs = arguments.epochs
@@ -43,6 +49,7 @@ if __name__ == "__main__":
     train_pct = arguments.train_pct
     test_pct = arguments.test_pct
     model_type = arguments.model
+    algebra_demo = arguments.algebra_demo
     if (not (mode == 'train' or mode == 'load_eval')):
         print('Only 2 modes available: train and load_eval')
         exit(1)
@@ -79,11 +86,14 @@ if __name__ == "__main__":
     elif (mode == 'train'):
         trainer = pl.Trainer(max_epochs=epochs)
         print('Getting train iterator...')
-        train_iterator = get_train_iterator(
-            demo_path, batch_size, voc, train_pct)
-        print('Getting train iterator...')
-        test_iterator = get_train_iterator(
-            test_path, batch_size, voc, test_pct)
+        if(algebra_demo=='yes'):
+            train_iterator, test_iterator = get_algebra_iterator(algebra_path, batch_size, vocab_size, 1)
+        else:
+            train_iterator = get_train_iterator(
+                demo_path, batch_size, voc, train_pct)
+            print('Getting test iterator...')
+            test_iterator = get_train_iterator(
+                test_path, batch_size, voc, test_pct)
         trainer.fit(model, train_dataloaders=train_iterator)
         print('Saving model...')
         torch.save(model, 'saved_' + model_type+'.pt')

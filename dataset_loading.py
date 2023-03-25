@@ -298,3 +298,30 @@ def tensor_to_string(vocab, input):
         # print(i)
         result += vocab.itos[int(i)]
     return result
+
+def get_algebra_iterator(path, batch_size, vocab, percentage):
+    data = []
+    for file in glob.iglob(path, recursive=True):
+
+        with open(file) as f:
+            lines = f.readlines()
+            lines = lines[:int(len(lines)*percentage)]
+            # print('Loading file : ', file, ' file-len: ',  len(lines))
+
+        stripped = []
+        for i in lines:
+            stripped.append(i.strip())
+
+        i = 0
+        while i < len(stripped)-1:
+            data.append([stripped[i], stripped[i+1]])
+            i = i+2
+    print('Dataset loaded: Loaded ', len(data),
+          ' items, percentage: ', percentage)
+
+    data_train = pd.DataFrame(data[:len(data)*0.9], columns=['Question', 'Answer'])
+    data_test = pd.DataFrame(data[len(data)*0.9:], columns=['Question', 'Answer'])
+    
+    train_dataset = Train_Dataset(data_train, 'Question', 'Answer', vocab)
+    test_dataset = Train_Dataset(data_test, 'Question', 'Answer', vocab)
+    return get_train_loader(train_dataset, batch_size), get_train_loader(test_dataset, batch_size)
