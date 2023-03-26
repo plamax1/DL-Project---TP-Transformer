@@ -1,5 +1,5 @@
 # from test_dataset_loading import *
-from dataset_loading import Vocabulary, get_train_iterator, get_algebra_iterator
+from dataset_loading import Vocabulary, get_train_iterator
 import torch
 import pytorch_lightning as pl
 import torch
@@ -94,19 +94,14 @@ if __name__ == "__main__":
         print(trainer.test(model, dataloaders=test_iterator_ext))
     elif (mode == 'train'):
         trainer = pl.Trainer(max_epochs=epochs)
-        if(algebra_demo=='yes'):
-            print('Getting algebra train-test iterator...')
-            train_iterator, test_iterator = get_algebra_iterator(
-                algebra_path, batch_size, voc, 1)
-        else:
-            print('Getting train iterator...')
-            train_iterator = get_train_iterator(
-                demo_path, batch_size, voc, train_pct)
-            print('Getting test iterator...')
-            test_iterator_int = get_train_iterator(
-                test_path_int, batch_size, voc, test_pct)
-            test_iterator_ext = get_train_iterator(
-                test_path_ext, batch_size, voc, test_pct)
+        print('Getting train iterator...')
+        train_iterator = get_train_iterator(
+            demo_path, batch_size, voc, train_pct)
+        print('Getting test iterator...')
+        test_iterator_int = get_train_iterator(
+            test_path_int, batch_size, voc, test_pct)
+        test_iterator_ext = get_train_iterator(
+            test_path_ext, batch_size, voc, test_pct)
         trainer.fit(model, train_dataloaders=train_iterator)
         print('Saving model...')
         torch.save(model, 'saved_' + model_type+'.pt')
