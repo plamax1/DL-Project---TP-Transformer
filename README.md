@@ -33,9 +33,14 @@ https://drive.google.com/file/d/1RaQi5wSuOXp0Bh9aFa0XDfkhwZ3n2Ta9/view?usp=shari
 ```bash
 ```
 
-### Results
+### Accuracy Results
 | Attempt | Tp-transformer    | Transformer    | Trivial baseline
 | :---:   | :---: | :---: | :---: |
 | Interpolate | 301   | 283   |
 | Extrapolate | 301   | 283   |
 
+### Loss Results
+| Attempt | Tp-transformer    | Transformer    | Trivial baseline
+| :---:   | :---: | :---: | :---: |
+| Interpolate | 301   | 283   |
+| Extrapolate | 301   | 283   |
