@@ -274,7 +274,7 @@ def get_train_iterator(train_path, batch_size, vocab, percentage):
         with open(file) as f:
             lines = f.readlines()
             lines = lines[:int(len(lines)*percentage)]
-            # print('Loading file : ', file, ' file-len: ',  len(lines))
+            print('Loading file : ', file, ' file-len: ',  len(lines))
 
         stripped = []
         for i in lines:
