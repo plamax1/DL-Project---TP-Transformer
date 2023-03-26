@@ -17,7 +17,7 @@ path = pathlib.Path().resolve()
 train_path = os.path.join(path, 'Dataset/Train/**/*.txt')
 test_path_int = os.path.join(path, 'Dataset/Test/interpolate**/*.txt')
 test_path_ext = os.path.join(path, 'Dataset/Test/extrapolate**/*.txt')
-demo_path = os.path.join(path, 'Demo/**/*.txt')
+#demo_path = os.path.join(path, 'Demo/**/*.txt')
 algebra_path = os.path.join(path, 'Algebra/**/*.txt')
 
 
@@ -39,9 +39,6 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=10,
                         help='the number of epochs you want the trainer to run for (default: "10")')
     
-    parser.add_argument('--algebra_demo', type=str, default='No',
-                        help='In you want to run in the algebra demo mode (default: "No")')
-    
     arguments = parser.parse_args()
     batch_size = arguments.batch_size
     epochs = arguments.epochs
@@ -50,7 +47,6 @@ if __name__ == "__main__":
     train_pct = arguments.train_pct
     test_pct = arguments.test_pct
     model_type = arguments.model
-    algebra_demo = arguments.algebra_demo
     if (not (mode == 'train' or mode == 'load_eval')):
         print('Only 2 modes available: train and load_eval')
         exit(1)
@@ -96,7 +92,7 @@ if __name__ == "__main__":
         trainer = pl.Trainer(max_epochs=epochs)
         print('Getting train iterator...')
         train_iterator = get_train_iterator(
-            demo_path, batch_size, voc, train_pct)
+            train_path, batch_size, voc, train_pct)
         print('Getting test iterator...')
         test_iterator_int = get_train_iterator(
             test_path_int, batch_size, voc, test_pct)
