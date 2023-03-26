@@ -34,9 +34,7 @@ https://drive.google.com/file/d/1RaQi5wSuOXp0Bh9aFa0XDfkhwZ3n2Ta9/view?usp=shari
 ```
 
 ### Results
-|           | Tp-transformer|Transformer|Trivial baseline|
-|Interpolate| ------------- | ----------|----------------|
-|Extrapolate| Content Cell  |     ent   |----------------|
-
-
+| Attempt | #1    | #2    |
+| :---:   | :---: | :---: |
+| Seconds | 301   | 283   |
 
