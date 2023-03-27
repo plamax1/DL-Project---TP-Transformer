@@ -1,6 +1,4 @@
-# DL-Project---TP-Transformer
-DL Project - TP Transformer
-#Deep Learning Project 2022-23
+# Deep Learning Project 2022-23
 ## Question Answering on Mathematics Dataset. 
 - Sota implementation : Tp- Transformer
 - Other baseline implementation: Transformer
