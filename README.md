@@ -47,7 +47,7 @@ https://drive.google.com/file/d/1kYYXZkjCPRAb6-t1jSSbmAJzyyYyEkt8/view?usp=shari
 | Attempt | Tp-transformer    | Transformer    | Trivial baseline
 | :---:   | :---: | :---: | :---: |
 | Interpolate | 8.37   | 8.36   | 2.26
-| Extrapolate | 10.58   | 10.58   | 2.36
+| Extrapolate | 10.61   | 10.61   | 2.36
 
 ### Loss Results
 | Attempt | Tp-transformer    | Transformer    | Trivial baseline
