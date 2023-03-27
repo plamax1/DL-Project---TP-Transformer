@@ -4,8 +4,6 @@ import torch
 import pytorch_lightning as pl
 import torch
 import argparse
-import time
-from utils import *
 from classifier import Multiclass
 from tp_transformer import TpTransformer
 from transformer import Transformer
