@@ -7,3 +7,6 @@ lightning_logs
 savedtransformer
 Demo
 __pycache__
+old
+transformer_old_notpep8.py
+garbage.py
