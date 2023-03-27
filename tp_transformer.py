@@ -235,7 +235,7 @@ class TpTransformer(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
-            self.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)
+            self.parameters(), lr=0.0001, betas=(0.9, 0.995), eps=1e-9)
 
         return optimizer
 

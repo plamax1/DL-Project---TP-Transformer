@@ -34,12 +34,12 @@ https://drive.google.com/file/d/1RaQi5wSuOXp0Bh9aFa0XDfkhwZ3n2Ta9/view?usp=shari
 https://drive.google.com/file/d/1kYYXZkjCPRAb6-t1jSSbmAJzyyYyEkt8/view?usp=sharing
 ```
 
-### Test mode
+### Used test mode
 ```bash
 !python main.py --mode train --model Classifier --batch_size 256 --epochs 2 --train_pct 0.005 --test_pct 0.1
 ```
 
-### Eval mode
+### Used eval mode
 ```bash
 !python main.py --mode load_eval --model <model> --test_pct 0.1 
 ```
